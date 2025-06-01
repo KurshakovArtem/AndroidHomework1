@@ -89,7 +89,7 @@
         android:layout_width="@dimen/button_area"
         android:layout_height="@dimen/button_area"
         android:contentDescription="@string/description_like"
-        app:srcCompat="@drawable/ic_favorite_border_24"
+        app:srcCompat="@drawable/ic_like_24"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/under_content_barrier"
         android:background="@android:color/transparent" />
