@@ -1,6 +1,7 @@
 package ru.netology.nmedia.activity
 
 import android.os.Bundle
+import android.view.View
 import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
@@ -56,10 +57,15 @@ class MainActivity : AppCompatActivity() {
 
         viewModel.edited.observe(this) { post ->
             if (post.id != 0L) {
+                binding.editGroup.visibility = View.VISIBLE
+                binding.oldEdit.text = post.content
                 with(binding.contentText) {
                     setText(post.content)
                     AndroidUtils.showKeyboard(this)
                 }
+            } else {
+                binding.oldEdit.text = ""
+                binding.editGroup.visibility = View.GONE
             }
         }
 
@@ -76,6 +82,15 @@ class MainActivity : AppCompatActivity() {
 
                 viewModel.save(text.toString())
 
+                setText("")
+                clearFocus()
+                AndroidUtils.hideKeyboard(it)
+            }
+        }
+
+        binding.closeButton.setOnClickListener {
+            with(binding.contentText) {
+                viewModel.cancelEdit()
                 setText("")
                 clearFocus()
                 AndroidUtils.hideKeyboard(it)

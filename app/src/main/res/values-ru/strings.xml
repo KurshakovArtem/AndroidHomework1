@@ -12,4 +12,7 @@
     <string name="error_empty_content">Контент не можнь быть пустым</string>
     <string name="menu_edit">Изменить</string>
     <string name="description_save_button">Сохранить</string>
+    <string name="description_icon_edit">Изменить</string>
+    <string name="edit_post">Изменить пост</string>
+    <string name="description_edit_post_close_button">Отменить изменение поста</string>
 </resources>

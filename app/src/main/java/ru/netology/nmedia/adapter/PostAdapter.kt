@@ -12,7 +12,6 @@ import ru.netology.nmedia.dto.Post
 import ru.netology.nmedia.supportingFunctions.converterNumToString
 
 
-//typealias OnActionListener = (post: Post) -> Unit
 interface OnInteractionListener{
     fun onLike(post: Post){}
     fun onEdit(post: Post){}

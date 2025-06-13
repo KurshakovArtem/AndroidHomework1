@@ -20,7 +20,7 @@
         android:id="@+id/toolsBarrier"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        app:constraint_referenced_ids="save, contentText"
+        app:constraint_referenced_ids="save, contentText, ic_edit, close_button, edit_post_text, old_edit"
         app:barrierDirection="top"/>
     
     <EditText
@@ -28,7 +28,7 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:hint="@string/post_text"
-        app:layout_constraintTop_toTopOf="@id/toolsBarrier"
+
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toStartOf="@id/save"
@@ -50,6 +50,55 @@
         android:layout_marginTop="@dimen/common_spacing"
         android:contentDescription="@string/description_save_button"/>
 
+    <androidx.constraintlayout.widget.Group
+        android:id="@+id/edit_group"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        app:constraint_referenced_ids="old_edit, ic_edit, edit_post_text, close_button"/>
+    
+    
+    <TextView
+        android:id="@+id/old_edit"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/contentText"
+        tools:text="Test text"
+        android:layout_marginStart="@dimen/common_spacing"/>
+
+    <ImageView
+        android:id="@+id/ic_edit"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/old_edit"
+        app:layout_constraintTop_toTopOf="@id/toolsBarrier"
+        android:src="@drawable/ic_edit_content_24"
+        android:background="@android:color/transparent"
+        android:contentDescription="@string/description_icon_edit"/>
+
+    <TextView
+        android:id="@+id/edit_post_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintStart_toEndOf="@id/ic_edit"
+        app:layout_constraintBottom_toBottomOf="@id/ic_edit"
+        app:layout_constraintTop_toTopOf="@id/toolsBarrier"
+        android:text="@string/edit_post"
+        android:textColor="#2F55AE"
+        android:textSize="18sp"
+        android:layout_marginStart="@dimen/common_spacing"/>
+
+    <ImageButton
+        android:id="@+id/close_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@drawable/ic_edit_close"
+        android:background="@android:color/transparent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/save"
+        android:contentDescription="@string/description_edit_post_close_button"/>
 
 
 
