@@ -42,18 +42,21 @@ class PostViewHolder(
         author.text = post.author
         published.text = post.published
         content.text = post.content
-        valueLike.text = converterNumToString(post.likes)
-        valueShare.text = converterNumToString(post.share)
+        shareButton.text = converterNumToString(post.share)
         valuePostViews.text = converterNumToString(post.postViews)
-        likeButton.setImageResource(
-            if (post.likedByMe) {
-                valueLike.text = converterNumToString(post.likes)
-                R.drawable.ic_liked_24
-            } else {
-                valueLike.text = converterNumToString(post.likes)
-                R.drawable.ic_like_24
-            }
-        )
+        likeButton.apply {
+            isChecked = post.likedByMe
+            text = converterNumToString(post.likes)
+        }
+//        likeButton.setImageResource(
+//            if (post.likedByMe) {
+//                valueLike.text = converterNumToString(post.likes)
+//                R.drawable.ic_liked_24
+//            } else {
+//                valueLike.text = converterNumToString(post.likes)
+//                R.drawable.ic_like_24
+//            }
+//        )
         likeButton.setOnClickListener {
             onInteractionListener.onLike(post)
         }
