@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="Style.CountButton" parent="Widget.Material3.Button.TextButton.Icon">
+        <item name="iconTint">?attr/colorControlNormal</item>
+        <item name="android:textColor">?attr/colorControlNormal</item>
+        <item name="android:layout_width">@dimen/long_button_area</item>
+        <item name="android:layout_height">@dimen/button_area</item>
+        <item name="android:background">@android:color/transparent</item>
+    </style>
+
+
+</resources>
