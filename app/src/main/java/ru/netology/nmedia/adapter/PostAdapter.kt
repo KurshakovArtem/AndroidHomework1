@@ -48,15 +48,7 @@ class PostViewHolder(
             isChecked = post.likedByMe
             text = converterNumToString(post.likes)
         }
-//        likeButton.setImageResource(
-//            if (post.likedByMe) {
-//                valueLike.text = converterNumToString(post.likes)
-//                R.drawable.ic_liked_24
-//            } else {
-//                valueLike.text = converterNumToString(post.likes)
-//                R.drawable.ic_like_24
-//            }
-//        )
+
         likeButton.setOnClickListener {
             onInteractionListener.onLike(post)
         }
