@@ -14,4 +14,8 @@
     <string name="description_icon_edit">Edit</string>
     <string name="edit_post">Edit post</string>
     <string name="description_edit_post_close_button">Close edit post</string>
+    <string name="chooser_share_post">Share post</string>
+    <string name="add_post">Add post</string>
+    <string name="description_video">Video</string>
+    <string name="chooser_open_video">Open video</string>
 </resources>

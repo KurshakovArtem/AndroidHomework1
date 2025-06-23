@@ -1,6 +1,7 @@
 package ru.netology.nmedia.adapter
 
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
 import androidx.appcompat.widget.PopupMenu
 import androidx.recyclerview.widget.DiffUtil
@@ -12,11 +13,12 @@ import ru.netology.nmedia.dto.Post
 import ru.netology.nmedia.supportingFunctions.converterNumToString
 
 
-interface OnInteractionListener{
-    fun onLike(post: Post){}
-    fun onEdit(post: Post){}
-    fun onRemove(post: Post){}
-    fun onShare(post: Post){}
+interface OnInteractionListener {
+    fun onLike(post: Post) {}
+    fun onEdit(post: Post) {}
+    fun onRemove(post: Post) {}
+    fun onShare(post: Post) {}
+    fun onVideo(post: Post) {}
 }
 
 class PostAdapter(
@@ -44,19 +46,12 @@ class PostViewHolder(
         content.text = post.content
         shareButton.text = converterNumToString(post.share)
         valuePostViews.text = converterNumToString(post.postViews)
+
         likeButton.apply {
             isChecked = post.likedByMe
             text = converterNumToString(post.likes)
         }
-//        likeButton.setImageResource(
-//            if (post.likedByMe) {
-//                valueLike.text = converterNumToString(post.likes)
-//                R.drawable.ic_liked_24
-//            } else {
-//                valueLike.text = converterNumToString(post.likes)
-//                R.drawable.ic_like_24
-//            }
-//        )
+
         likeButton.setOnClickListener {
             onInteractionListener.onLike(post)
         }
@@ -72,6 +67,7 @@ class PostViewHolder(
                             onInteractionListener.onRemove(post)
                             true
                         }
+
                         R.id.edit -> {
                             onInteractionListener.onEdit(post)
                             true
@@ -81,6 +77,16 @@ class PostViewHolder(
                     }
                 }
             }.show()
+        }
+
+        if (post.videoUrl.isNullOrBlank()) {
+            videoGroup.visibility = View.GONE
+        } else {
+            videoGroup.visibility = View.VISIBLE
+            urlText.text = post.videoUrl.toString()
+            videoGroup.setOnClickListener {
+                onInteractionListener.onVideo(post)
+            }
         }
     }
 }

@@ -10,95 +10,21 @@
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/list"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
+        android:layout_height="match_parent"
         tools:listitem="@layout/card_post"
-        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toTopOf="@id/toolsBarrier"/>
+        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
 
-    <androidx.constraintlayout.widget.Barrier
-        android:id="@+id/toolsBarrier"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:constraint_referenced_ids="save, contentText, ic_edit, close_button, edit_post_text, old_edit"
-        app:barrierDirection="top"/>
-    
-    <EditText
-        android:id="@+id/contentText"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:hint="@string/post_text"
-
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toStartOf="@id/save"
-        android:padding="@dimen/common_spacing"
-        android:inputType="textMultiLine"
-        android:importantForAutofill="no"
-        android:background="@android:color/transparent"/>
-
-
-    <ImageButton
-        android:id="@+id/save"
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fab"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toEndOf="@id/contentText"
-        android:src="@drawable/ic_save_48"
-        android:background="@android:color/transparent"
-        android:layout_marginTop="@dimen/common_spacing"
-        android:contentDescription="@string/description_save_button"/>
+        android:src="@drawable/ic_add_24"
+        android:contentDescription="@string/add_post"
+        android:layout_margin="@dimen/common_spacing"/>
 
-    <androidx.constraintlayout.widget.Group
-        android:id="@+id/edit_group"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:visibility="gone"
-        app:constraint_referenced_ids="old_edit, ic_edit, edit_post_text, close_button"/>
-    
-    
-    <TextView
-        android:id="@+id/old_edit"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintBottom_toTopOf="@id/contentText"
-        tools:text="Test text"
-        android:layout_marginStart="@dimen/common_spacing"/>
 
-    <ImageView
-        android:id="@+id/ic_edit"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintBottom_toTopOf="@id/old_edit"
-        app:layout_constraintTop_toTopOf="@id/toolsBarrier"
-        android:src="@drawable/ic_edit_content_24"
-        android:background="@android:color/transparent"
-        android:contentDescription="@string/description_icon_edit"/>
-
-    <TextView
-        android:id="@+id/edit_post_text"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:layout_constraintStart_toEndOf="@id/ic_edit"
-        app:layout_constraintBottom_toBottomOf="@id/ic_edit"
-        app:layout_constraintTop_toTopOf="@id/toolsBarrier"
-        android:text="@string/edit_post"
-        android:textColor="#2F55AE"
-        android:textSize="18sp"
-        android:layout_marginStart="@dimen/common_spacing"/>
-
-    <ImageButton
-        android:id="@+id/close_button"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:src="@drawable/ic_edit_close"
-        android:background="@android:color/transparent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintBottom_toTopOf="@id/save"
-        android:contentDescription="@string/description_edit_post_close_button"/>
 
 
 
