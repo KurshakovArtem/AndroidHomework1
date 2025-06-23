@@ -22,8 +22,11 @@ class MainActivity : AppCompatActivity() {
         val viewModel: PostViewModel by viewModels()
 
         val newPostLauncher = registerForActivityResult(NewPostResultContract()) { content ->
-            content ?: return@registerForActivityResult
-            viewModel.save(content)
+            if (content != null){
+                viewModel.save(content)
+            }else{
+                viewModel.cancelEdit()
+            }
         }
 
         val adapter = PostAdapter(
@@ -55,9 +58,10 @@ class MainActivity : AppCompatActivity() {
 
                 override fun onVideo(post: Post) {
                     val intent = Intent().apply {
-                        action = Intent.ACTION_SEND
-                        putExtra(Intent.ACTION_VIEW, post.videoUrl?.toUri())
-                        type = "video/*"
+                        action = Intent.ACTION_VIEW
+                        data = post.videoUrl?.toUri()
+//                        putExtra(Intent.ACTION_VIEW, post.videoUrl?.toUri())
+//                        type = "video/*"
                     }
                     val videoIntent =
                         Intent.createChooser(intent, getString(R.string.chooser_open_video))
