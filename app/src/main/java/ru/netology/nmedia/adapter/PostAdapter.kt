@@ -83,7 +83,7 @@ class PostViewHolder(
             videoGroup.visibility = View.GONE
         } else {
             videoGroup.visibility = View.VISIBLE
-            urlText.text = post.videoUrl.toString()
+            urlText.text = post.videoUrl
             videoGroup.setOnClickListener {
                 onInteractionListener.onVideo(post)
             }
