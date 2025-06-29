@@ -76,6 +76,15 @@ class FeedFragment : Fragment() {
                         startActivity(videoIntent)
                     }
                 }
+
+                override fun onMoveToSinglePost(post: Post) {
+                    findNavController().navigate(
+                        R.id.action_feedFragment_to_singlePostFragment,
+                        Bundle().apply {
+                            textArg = post.id.toString()
+                        }
+                    )
+                }
             }
         )
 

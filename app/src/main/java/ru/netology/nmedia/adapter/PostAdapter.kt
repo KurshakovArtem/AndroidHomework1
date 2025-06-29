@@ -19,6 +19,7 @@ interface OnInteractionListener {
     fun onRemove(post: Post) {}
     fun onShare(post: Post) {}
     fun onVideo(post: Post) {}
+    fun onMoveToSinglePost(post: Post) {}
 }
 
 class PostAdapter(
@@ -57,6 +58,9 @@ class PostViewHolder(
         }
         shareButton.setOnClickListener {
             onInteractionListener.onShare(post)
+        }
+        cardPost.setOnClickListener {
+            onInteractionListener.onMoveToSinglePost(post)
         }
         menu.setOnClickListener {
             PopupMenu(it.context, it).apply {
