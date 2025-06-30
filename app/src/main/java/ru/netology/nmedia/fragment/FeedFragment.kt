@@ -1,33 +1,37 @@
-package ru.netology.nmedia.activity
+package ru.netology.nmedia.fragment
 
 import android.content.Intent
 import android.os.Bundle
-import androidx.activity.viewModels
-import androidx.appcompat.app.AppCompatActivity
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
 import androidx.core.net.toUri
+import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
+import androidx.navigation.fragment.findNavController
 import ru.netology.nmedia.R
 import ru.netology.nmedia.adapter.OnInteractionListener
 import ru.netology.nmedia.adapter.PostAdapter
-import ru.netology.nmedia.databinding.ActivityMainBinding
+import ru.netology.nmedia.databinding.FragmentFeedBinding
 import ru.netology.nmedia.dto.Post
+import ru.netology.nmedia.fragment.NewPostFragment.Companion.textArg
 import ru.netology.nmedia.viewmodel.PostViewModel
 
-class MainActivity : AppCompatActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
+class FeedFragment : Fragment() {
 
-        val binding = ActivityMainBinding.inflate(layoutInflater)
-        setContentView(binding.root)
+    private val viewModel: PostViewModel by viewModels(ownerProducer = ::requireParentFragment)
 
-        val viewModel: PostViewModel by viewModels()
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
 
-        val newPostLauncher = registerForActivityResult(NewPostResultContract()) { content ->
-            if (content != null){
-                viewModel.save(content)
-            }else{
-                viewModel.cancelEdit()
-            }
-        }
+        val binding = FragmentFeedBinding.inflate(
+            inflater,
+            container,
+            false
+        )
 
         val adapter = PostAdapter(
             object : OnInteractionListener {
@@ -53,33 +57,46 @@ class MainActivity : AppCompatActivity() {
 
                 override fun onEdit(post: Post) {
                     viewModel.edit(post)
-                    newPostLauncher.launch(post.content)
+                    findNavController().navigate(
+                        R.id.action_feedFragment_to_newPostFragment,
+                        Bundle().apply {
+                            textArg = post.content
+                        }
+                    )
                 }
 
                 override fun onVideo(post: Post) {
                     val intent = Intent().apply {
                         action = Intent.ACTION_VIEW
                         data = post.videoUrl?.toUri()
-//                        putExtra(Intent.ACTION_VIEW, post.videoUrl?.toUri())
-//                        type = "video/*"
                     }
                     val videoIntent =
                         Intent.createChooser(intent, getString(R.string.chooser_open_video))
-                    if (intent.resolveActivity(packageManager) != null) {
+                    if (intent.resolveActivity(requireActivity().packageManager) != null) {    // врзможно стоит реализовать через getActivity() вместо requireActivity()
                         startActivity(videoIntent)
                     }
+                }
+
+                override fun onMoveToSinglePost(post: Post) {
+                    findNavController().navigate(
+                        R.id.action_feedFragment_to_singlePostFragment,
+                        Bundle().apply {
+                            textArg = post.id.toString()
+                        }
+                    )
                 }
             }
         )
 
         binding.list.adapter = adapter
 
-        viewModel.data.observe(this) { posts ->
+        viewModel.data.observe(viewLifecycleOwner) { posts ->
             adapter.submitList(posts)
         }
 
         binding.fab.setOnClickListener {
-            newPostLauncher.launch(null)
+            findNavController().navigate(R.id.action_feedFragment_to_newPostFragment)
         }
+        return binding.root
     }
 }
