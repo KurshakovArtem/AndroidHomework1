@@ -36,6 +36,7 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
                 repository.save(it.copy(content = text))
             }
         }
+        if (edited.value?.id == 0L) repository.setDraft("")  // очищаем черновик
         edited.value = empty
     }
 
@@ -46,4 +47,14 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
     fun cancelEdit() {
         edited.value = empty
     }
+
+    fun createDraft(content: String){
+        if (edited.value?.id != 0L){
+            cancelEdit()
+        } else {
+            repository.setDraft(content)
+        }
+    }
+
+    fun getDraft() = repository.getDraft()
 }

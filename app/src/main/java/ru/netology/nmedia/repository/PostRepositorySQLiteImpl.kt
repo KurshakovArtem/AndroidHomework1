@@ -9,7 +9,7 @@ class PostRepositorySQLiteImpl(private val dao: PostDao) : PostRepository {
 
     private var posts = emptyList<Post>()
     private val data = MutableLiveData(posts)
-
+    private var draftContent = ""
     init {
         posts = dao.getAll()
         data.value = posts
@@ -57,5 +57,11 @@ class PostRepositorySQLiteImpl(private val dao: PostDao) : PostRepository {
             }
         }
         data.value = posts
+    }
+
+    override fun getDraft() = draftContent
+
+    override fun setDraft(content: String) {
+        draftContent = content
     }
 }

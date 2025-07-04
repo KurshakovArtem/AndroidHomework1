@@ -29,10 +29,11 @@ class NewPostFragment : Fragment() {
             false
         )
 
-        arguments?.textArg?.let(binding.edit::setText)
+        arguments?.textArg?.let(binding.edit::setText) ?: binding.edit.setText(viewModel.getDraft())
 
         val callback = requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner) {
-            viewModel.cancelEdit()
+            //viewModel.cancelEdit()
+            viewModel.createDraft(binding.edit.text.toString())
             findNavController().navigateUp()
         }
         callback.isEnabled = true   // очистить пост при нажатии системной кнопки назад
