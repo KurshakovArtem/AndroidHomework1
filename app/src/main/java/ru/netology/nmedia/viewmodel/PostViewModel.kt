@@ -4,19 +4,24 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import ru.netology.nmedia.db.AppDb
 import ru.netology.nmedia.dto.Post
 import ru.netology.nmedia.repository.PostRepository
-import ru.netology.nmedia.repository.PostRepositoryFileImpl
+import ru.netology.nmedia.repository.PostRepositorySQLiteImpl
 
 private val empty = Post(
     id = 0,
     author = "",
     published = "",
     content = "",
+    likes = 0,
+    likedByMe = false
 )
 
 class PostViewModel(application: Application) : AndroidViewModel(application) {
-    private val repository: PostRepository = PostRepositoryFileImpl(application)
+    private val repository: PostRepository = PostRepositorySQLiteImpl(
+        AppDb.getInstance(application).postDao
+    )
     val data: LiveData<List<Post>> = repository.getAll()
     val edited = MutableLiveData(empty)
 
@@ -31,6 +36,7 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
                 repository.save(it.copy(content = text))
             }
         }
+        if (edited.value?.id == 0L) repository.setDraft("")  // очищаем черновик
         edited.value = empty
     }
 
@@ -38,7 +44,17 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
         edited.value = post
     }
 
-    fun cancelEdit(){
+    fun cancelEdit() {
         edited.value = empty
     }
+
+    fun createDraft(content: String){
+        if (edited.value?.id != 0L){
+            cancelEdit()
+        } else {
+            repository.setDraft(content)
+        }
+    }
+
+    fun getDraft() = repository.getDraft()
 }
