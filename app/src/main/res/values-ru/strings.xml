@@ -23,4 +23,6 @@
     <string name="channel_remote_name">Уведомления сервера</string>
     <string name="channel_remote_description">Уведомления с удаленного сервера</string>
     <string name="notification_user_liked">Пользователю %1$s понравился пост %2$s</string>
+    <string name="push_format_exception">Неверный формат Push сообщения</string>
+    <string name="notification_new_post">Пользователь %1$s опубликовал новый пост %2$s</string>
 </resources>

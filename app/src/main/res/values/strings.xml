@@ -21,5 +21,7 @@
     <string name="google_play_unavailable">Google Api Unavailable</string>
     <string name="channel_remote_name">Server notifications</string>
     <string name="channel_remote_description">Notifications from remote server</string>
-    <string name="notification_user_liked">User %1$s liked %2$s\\\'s post</string>
+    <string name="notification_user_liked">User %1$s liked %2$s post</string>
+    <string name="push_format_exception">Invalid Push message format</string>
+    <string name="notification_new_post">User %1$s published a new post %2$s</string>
 </resources>
