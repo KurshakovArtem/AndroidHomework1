@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.ksp)
+    alias(libs.plugins.google.services)
 }
 
 android {
@@ -11,8 +12,7 @@ android {
     defaultConfig {
         applicationId "ru.netology.nmedia"
         minSdk 24
-        //noinspection OldTargetApi
-        targetSdk 35
+        targetSdk 36
         versionCode 1
         versionName "1.0"
 
@@ -36,6 +36,7 @@ android {
     ksp {
         arg("room.schemaLocation", "$projectDir/schemas")
     }
+    buildToolsVersion '36.0.0'
 }
 
 dependencies {
@@ -57,4 +58,7 @@ dependencies {
     implementation libs.androidx.navigation.ui.ktx
     implementation libs.room.runtime
     ksp libs.androidx.room.compiler
+    implementation(platform(libs.firebase))
+    implementation(libs.firebase.messaging)
+    implementation(libs.play.services)
 }
