@@ -6,12 +6,14 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.core.net.toUri
+import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
 import ru.netology.nmedia.R
 import ru.netology.nmedia.adapter.OnInteractionListener
 import ru.netology.nmedia.adapter.PostAdapter
+import ru.netology.nmedia.databinding.ErrorViewBinding
 import ru.netology.nmedia.databinding.FragmentFeedBinding
 import ru.netology.nmedia.dto.Post
 import ru.netology.nmedia.fragment.NewPostFragment.Companion.textArg
@@ -89,9 +91,17 @@ class FeedFragment : Fragment() {
         )
 
         binding.list.adapter = adapter
+        val errorMergeBinding = ErrorViewBinding.bind(binding.root)
 
-        viewModel.data.observe(viewLifecycleOwner) { posts ->
-            adapter.submitList(posts)
+        viewModel.data.observe(viewLifecycleOwner) { state ->
+            adapter.submitList(state.posts)
+            binding.progress.isVisible = state.loading
+            binding.emptyText.isVisible = state.empty
+            errorMergeBinding.errorGroup.isVisible = state.error
+        }
+
+        errorMergeBinding.retryButton.setOnClickListener {
+            viewModel.loadPosts()
         }
 
         binding.fab.setOnClickListener {

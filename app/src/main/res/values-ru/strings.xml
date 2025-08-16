@@ -25,4 +25,7 @@
     <string name="notification_user_liked">Пользователю %1$s понравился пост %2$s</string>
     <string name="push_format_exception">Неверный формат Push сообщения</string>
     <string name="notification_new_post">Пользователь %1$s опубликовал новый пост %2$s</string>
+    <string name="error_loading">Что-то пошло не так. Попробуйте позже.</string>
+    <string name="retry_loading">Повторить</string>
+    <string name="empty_posts">Нет ни одного поста.</string>
 </resources>
