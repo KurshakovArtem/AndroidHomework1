@@ -47,19 +47,31 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun likeById(id: Long) = repository.likeById(id)
+    fun likeById(id: Long) {
+        val isLiked = data.value?.posts?.find { it.id == id }?.likedByMe ?: return
+        thread {
+            if (!isLiked) {
+                repository.likeById(id).likes
+            } else {
+                repository.dislikeById(id).likes
+            }
+        loadPosts() // внутри потока, чтобы не выполнялся первее (ждал завершения предыдущего запроса)
+        }
+    }
+
     fun shareById(id: Long) = repository.shareById(id)
     fun removeById(id: Long) {
         thread {
             val old = _data.value?.posts.orEmpty()
             _data.postValue(
-                _data.value?.copy(posts = _data.value?.posts.orEmpty()
-                    .filter { it.id != id }
+                _data.value?.copy(
+                    posts = _data.value?.posts.orEmpty()
+                        .filter { it.id != id }
                 )
             )
             try {
                 repository.removeById(id)
-            }catch (e: IOException){
+            } catch (e: IOException) {
                 _data.postValue(_data.value?.copy(posts = old))
             }
         }

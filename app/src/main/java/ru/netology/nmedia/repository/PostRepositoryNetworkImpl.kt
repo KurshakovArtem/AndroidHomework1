@@ -6,6 +6,7 @@ import com.google.gson.Gson
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import ru.netology.nmedia.dto.Post
 import java.util.concurrent.TimeUnit
@@ -30,12 +31,34 @@ class PostRepositoryNetworkImpl : PostRepository {
 
         return okHttpClient.newCall(request)
             .execute()
-            .let { it.body?.string() ?: throw RuntimeException("body is null") }
+            .let { it.body?.string() ?: throw RuntimeException("body is null")
+            //println(it)
+            }
             .let { gson.fromJson(it, typeToken.type) }
     }
 
-    override fun likeById(id: Long) {
-        TODO("Not yet implemented")
+    override fun likeById(id: Long): Post {
+        val request = Request.Builder()
+            .post(RequestBody.EMPTY)
+            .url("${BASE_URL}/api/posts/${id}/likes")
+            .build()
+
+        return okHttpClient.newCall(request)
+            .execute()
+            .let { it.body?.string() ?: throw RuntimeException("body is null") }
+            .let { gson.fromJson(it, Post::class.java) }
+    }
+
+    override fun dislikeById(id: Long): Post {
+        val request = Request.Builder()
+            .delete()
+            .url("${BASE_URL}/api/posts/$id/likes")
+            .build()
+
+        return okHttpClient.newCall(request)
+            .execute()
+            .let { it.body?.string() ?: throw RuntimeException("body is null") }
+            .let { gson.fromJson(it, Post::class.java) }
     }
 
     override fun shareById(id: Long) {
