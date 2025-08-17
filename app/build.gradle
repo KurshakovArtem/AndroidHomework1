@@ -67,4 +67,5 @@ dependencies {
     implementation(libs.firebase.messaging)
     implementation(libs.play.services)
     implementation(libs.okhttp)
+    implementation libs.androidx.swiperefreshlayout
 }

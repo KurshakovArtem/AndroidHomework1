@@ -51,11 +51,11 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
         val isLiked = data.value?.posts?.find { it.id == id }?.likedByMe ?: return
         thread {
             if (!isLiked) {
-                repository.likeById(id).likes
+                repository.likeById(id)
             } else {
-                repository.dislikeById(id).likes
+                repository.dislikeById(id)
             }
-        loadPosts() // внутри потока, чтобы не выполнялся первее (ждал завершения предыдущего запроса)
+            loadPosts() // внутри потока, чтобы не выполнялся первее (ждал завершения предыдущего запроса)
         }
     }
 
