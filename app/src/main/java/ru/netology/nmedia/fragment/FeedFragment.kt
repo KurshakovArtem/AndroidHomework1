@@ -6,12 +6,15 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.core.net.toUri
+import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import ru.netology.nmedia.R
 import ru.netology.nmedia.adapter.OnInteractionListener
 import ru.netology.nmedia.adapter.PostAdapter
+import ru.netology.nmedia.databinding.ErrorViewBinding
 import ru.netology.nmedia.databinding.FragmentFeedBinding
 import ru.netology.nmedia.dto.Post
 import ru.netology.nmedia.fragment.NewPostFragment.Companion.textArg
@@ -20,7 +23,7 @@ import ru.netology.nmedia.viewmodel.PostViewModel
 class FeedFragment : Fragment() {
 
     private val viewModel: PostViewModel by viewModels(ownerProducer = ::requireParentFragment)
-
+    private lateinit var swipeRefreshLayout: SwipeRefreshLayout
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -32,6 +35,13 @@ class FeedFragment : Fragment() {
             container,
             false
         )
+
+        swipeRefreshLayout = binding.swiperefresh
+        swipeRefreshLayout.setOnRefreshListener {
+            viewModel.loadPosts()
+            swipeRefreshLayout.isRefreshing = false
+        }
+
 
         val adapter = PostAdapter(
             object : OnInteractionListener {
@@ -89,9 +99,17 @@ class FeedFragment : Fragment() {
         )
 
         binding.list.adapter = adapter
+        val errorMergeBinding = ErrorViewBinding.bind(binding.root)
 
-        viewModel.data.observe(viewLifecycleOwner) { posts ->
-            adapter.submitList(posts)
+        viewModel.data.observe(viewLifecycleOwner) { state ->
+            adapter.submitList(state.posts)
+            binding.progress.isVisible = state.loading
+            binding.emptyText.isVisible = state.empty
+            errorMergeBinding.errorGroup.isVisible = state.error
+        }
+
+        errorMergeBinding.retryButton.setOnClickListener {
+            viewModel.loadPosts()
         }
 
         binding.fab.setOnClickListener {

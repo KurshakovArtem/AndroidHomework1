@@ -83,8 +83,8 @@ class SinglePostFragment : Fragment() {
             findNavController().navigateUp()
         }
 
-        viewModel.data.observe(viewLifecycleOwner) { posts ->
-            val post = posts.find { it.id == postId } ?: return@observe
+        viewModel.data.observe(viewLifecycleOwner) { state ->
+            val post = state.posts.find { it.id == postId } ?: return@observe
             postViewHolder.bind(post)
         }
         return binding.root

@@ -7,7 +7,7 @@ plugins {
 
 android {
     namespace 'ru.netology.nmedia'
-    compileSdk 36
+    compileSdkVersion 'android-36-ext19'
 
     defaultConfig {
         applicationId "ru.netology.nmedia"
@@ -24,6 +24,11 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            manifestPlaceholders["usesCleartextTraffic"] = false
+        }
+
+        debug {
+            manifestPlaceholders["usesCleartextTraffic"] = true
         }
     }
     compileOptions {
@@ -61,4 +66,6 @@ dependencies {
     implementation(platform(libs.firebase))
     implementation(libs.firebase.messaging)
     implementation(libs.play.services)
+    implementation(libs.okhttp)
+    implementation libs.androidx.swiperefreshlayout
 }
