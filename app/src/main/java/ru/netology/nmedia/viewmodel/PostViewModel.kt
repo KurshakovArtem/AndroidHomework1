@@ -50,12 +50,27 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
     fun likeById(id: Long) {
         val isLiked = data.value?.posts?.find { it.id == id }?.likedByMe ?: return
         thread {
-            if (!isLiked) {
-                repository.likeById(id)
-            } else {
-                repository.dislikeById(id)
-            }
-            loadPosts() // внутри потока, чтобы не выполнялся первее (ждал завершения предыдущего запроса)
+            _data.postValue(
+                _data.value?.copy(
+                    posts = _data.value?.posts.orEmpty().map { post ->
+                        if (post.id == id) {
+                            if (!isLiked) {
+                                repository.likeById(id)
+                            } else {
+                                repository.dislikeById(id)
+                            }
+                        } else post
+                    }
+                )
+            )
+
+
+            //            if (!isLiked) {
+//                repository.likeById(id)
+//            } else {
+//                repository.dislikeById(id)
+//            }
+//             // внутри потока, чтобы не выполнялся первее (ждал завершения предыдущего запроса)
         }
     }
 
