@@ -11,4 +11,10 @@ interface PostRepository {
     fun save(post: Post)
     fun getDraft(): String
     fun setDraft(content: String)
+    fun getAllAsync(callback: GetAllCallback)
+
+    interface GetAllCallback{
+        fun onSucccess(posts: List<Post>){}
+        fun onError(e: Exception){}
+    }
 }

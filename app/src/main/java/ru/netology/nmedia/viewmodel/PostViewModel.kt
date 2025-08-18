@@ -35,16 +35,29 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
         loadPosts()
     }
 
+//    fun loadPosts() {
+//        thread {
+//            _data.postValue(FeedModel(loading = true))
+//            try {
+//                val posts = repository.getAll()
+//                FeedModel(posts = posts, empty = posts.isEmpty())
+//            } catch (e: Exception) {
+//                FeedModel(error = true)
+//            }.also(_data::postValue)
+//        }
+//    }
+
     fun loadPosts() {
-        thread {
-            _data.postValue(FeedModel(loading = true))
-            try {
-                val posts = repository.getAll()
-                FeedModel(posts = posts, empty = posts.isEmpty())
-            } catch (e: Exception) {
-                FeedModel(error = true)
-            }.also(_data::postValue)
-        }
+        _data.postValue(FeedModel(loading = true))
+        repository.getAllAsync(object: PostRepository.GetAllCallback{
+            override fun onSucccess(posts: List<Post>) {
+                _data.postValue(FeedModel(posts = posts, empty = posts.isEmpty()))
+            }
+
+            override fun onError(e: Exception) {
+                _data.postValue(FeedModel(error = true))
+            }
+        })
     }
 
     fun likeById(id: Long) {
@@ -63,14 +76,6 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
                     }
                 )
             )
-
-
-            //            if (!isLiked) {
-//                repository.likeById(id)
-//            } else {
-//                repository.dislikeById(id)
-//            }
-//             // внутри потока, чтобы не выполнялся первее (ждал завершения предыдущего запроса)
         }
     }
 
