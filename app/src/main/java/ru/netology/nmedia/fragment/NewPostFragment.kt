@@ -32,7 +32,6 @@ class NewPostFragment : Fragment() {
         arguments?.textArg?.let(binding.edit::setText) ?: binding.edit.setText(viewModel.getDraft())
 
         val callback = requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner) {
-            //viewModel.cancelEdit()
             viewModel.createDraft(binding.edit.text.toString())
             findNavController().navigateUp()
         }
@@ -50,7 +49,7 @@ class NewPostFragment : Fragment() {
         }
 
         viewModel.postCreated.observe(viewLifecycleOwner){
-            viewModel.loadPosts()
+            //viewModel.loadPosts()
             findNavController().navigateUp()
         }
 

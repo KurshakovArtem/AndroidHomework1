@@ -52,11 +52,12 @@ class PostRepositoryNetworkImpl : PostRepository {
                 override fun onResponse(call: Call, response: Response) {
                     val body = response.body?.string() ?: throw RuntimeException("body is null")
                     try {
-                        callback.onSucccess(gson.fromJson(body, typeToken.type))
+                        callback.onSuccess(gson.fromJson(body, typeToken.type))
                     } catch (e: Exception) {
                         callback.onError(e)
                     }
                 }
+
                 override fun onFailure(call: Call, e: IOException) {
                     callback.onError(e)
                 }
@@ -66,7 +67,7 @@ class PostRepositoryNetworkImpl : PostRepository {
     override fun likeById(id: Long): Post {
         val request = Request.Builder()
             .post(RequestBody.EMPTY)
-            .url("${BASE_URL}/api/posts/${id}/likes")
+            .url("${BASE_URL}/api/slow/posts/${id}/likes")
             .build()
 
         return okHttpClient.newCall(request)
@@ -75,16 +76,62 @@ class PostRepositoryNetworkImpl : PostRepository {
             .let { gson.fromJson(it, Post::class.java) }
     }
 
+    override fun likeByIdAsync(id: Long, callback: PostRepository.PostBodyCallback) {
+        val request = Request.Builder()
+            .post(RequestBody.EMPTY)
+            .url("${BASE_URL}/api/slow/posts/${id}/likes")
+            .build()
+
+        okHttpClient.newCall(request)
+            .enqueue(object : Callback {
+                override fun onResponse(call: Call, response: Response) {
+                    val body = response.body?.string() ?: throw RuntimeException("body is null")
+                    if (response.isSuccessful) {
+                        callback.onSuccess(gson.fromJson(body, Post::class.java))
+                    } else {
+                        callback.onError(RuntimeException("Ощибка добавления Like"))
+                    }
+                }
+
+                override fun onFailure(call: Call, e: IOException) {
+                    callback.onError(e)
+                }
+            })
+    }
+
     override fun dislikeById(id: Long): Post {
         val request = Request.Builder()
             .delete()
-            .url("${BASE_URL}/api/posts/$id/likes")
+            .url("${BASE_URL}/api/slow/posts/$id/likes")
             .build()
 
         return okHttpClient.newCall(request)
             .execute()
             .let { it.body?.string() ?: throw RuntimeException("body is null") }
             .let { gson.fromJson(it, Post::class.java) }
+    }
+
+    override fun dislikeByIdAsync(id: Long, callback: PostRepository.PostBodyCallback) {
+        val request = Request.Builder()
+            .delete()
+            .url("${BASE_URL}/api/slow/posts/$id/likes")
+            .build()
+
+        okHttpClient.newCall(request)
+            .enqueue(object : Callback {
+                override fun onResponse(call: Call, response: Response) {
+                    val body = response.body?.string() ?: throw RuntimeException("body is null")
+                    if (response.isSuccessful) {
+                        callback.onSuccess(gson.fromJson(body, Post::class.java))
+                    } else {
+                        callback.onError(RuntimeException("Ощибка удаления Like"))
+                    }
+                }
+
+                override fun onFailure(call: Call, e: IOException) {
+                    callback.onError(e)
+                }
+            })
     }
 
     override fun shareById(id: Long) {
@@ -103,6 +150,30 @@ class PostRepositoryNetworkImpl : PostRepository {
             .close()
     }
 
+    override fun removeBiIdAsync(id: Long, callback: PostRepository.EmptyBodyCallback) {
+        val request = Request.Builder()
+            .delete()
+            .url("${BASE_URL}/api/slow/posts/$id")
+            .build()
+
+        okHttpClient.newCall(request)
+            .enqueue(object : Callback {
+                override fun onResponse(call: Call, response: Response) {
+                    if (response.isSuccessful) {
+                        callback.onSuccess()
+                    } else {
+                        callback.onError(RuntimeException("Ощибка удаленния"))
+                    }
+                }
+
+                override fun onFailure(call: Call, e: IOException) {
+                    callback.onError(e)
+                }
+
+
+            })
+    }
+
     override fun save(post: Post) {
         val request = Request.Builder()
             .post(gson.toJson(post).toRequestBody(jsonType))
@@ -112,6 +183,29 @@ class PostRepositoryNetworkImpl : PostRepository {
         okHttpClient.newCall(request)
             .execute()
             .close()
+    }
+
+    override fun saveAsync(post: Post, callback: PostRepository.PostBodyCallback) {
+        val request = Request.Builder()
+            .post(gson.toJson(post).toRequestBody(jsonType))
+            .url("${BASE_URL}/api/slow/posts")
+            .build()
+
+        okHttpClient.newCall(request)
+            .enqueue(object : Callback {
+                override fun onResponse(call: Call, response: Response) {
+                    val body = response.body?.string() ?: throw RuntimeException("body is null")
+                    if (response.isSuccessful) {
+                        callback.onSuccess(gson.fromJson(body, Post::class.java))
+                    } else {
+                        callback.onError(RuntimeException("Ощибка добавления поста"))
+                    }
+                }
+
+                override fun onFailure(call: Call, e: IOException) {
+                    callback.onError(e)
+                }
+            })
     }
 
     override fun getDraft() = draftContent
