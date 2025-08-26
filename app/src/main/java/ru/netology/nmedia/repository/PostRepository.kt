@@ -11,24 +11,14 @@ interface PostRepository {
     fun save(post: Post)
     fun getDraft(): String
     fun setDraft(content: String)
-    fun getAllAsync(callback: GetAllCallback)
-    fun removeBiIdAsync(id: Long, callback: EmptyBodyCallback)
-    fun saveAsync(post: Post, callback: PostBodyCallback)
-    fun likeByIdAsync(id: Long, callback: PostBodyCallback)
-    fun dislikeByIdAsync(id: Long, callback: PostBodyCallback)
+    fun getAllAsync(callback: PostCallback<List<Post>>)
+    fun removeBiIdAsync(id: Long, callback: PostCallback<Unit>)
+    fun saveAsync(post: Post, callback: PostCallback<Post>)
+    fun likeByIdAsync(id: Long, callback: PostCallback<Post>)
+    fun dislikeByIdAsync(id: Long, callback: PostCallback<Post>)
 
-    interface GetAllCallback {
-        fun onSuccess(posts: List<Post>) {}
-        fun onError(e: Exception) {}
-    }
-
-    interface EmptyBodyCallback {
-        fun onSuccess() {}
-        fun onError(e: Exception) {}
-    }
-
-    interface PostBodyCallback {
-        fun onSuccess(post: Post) {}
-        fun onError(e: Exception) {}
+    interface PostCallback<T> {
+        fun onSuccess(result: T)
+        fun onError(e: Exception)
     }
 }

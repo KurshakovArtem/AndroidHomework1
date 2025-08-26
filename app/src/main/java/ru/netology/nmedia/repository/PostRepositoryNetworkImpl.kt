@@ -42,7 +42,7 @@ class PostRepositoryNetworkImpl : PostRepository {
             .let { gson.fromJson(it, typeToken.type) }
     }
 
-    override fun getAllAsync(callback: PostRepository.GetAllCallback) {
+    override fun getAllAsync(callback: PostRepository.PostCallback<List<Post>>) {
         val request = Request.Builder()
             .url("${BASE_URL}/api/slow/posts")
             .build()
@@ -76,7 +76,7 @@ class PostRepositoryNetworkImpl : PostRepository {
             .let { gson.fromJson(it, Post::class.java) }
     }
 
-    override fun likeByIdAsync(id: Long, callback: PostRepository.PostBodyCallback) {
+    override fun likeByIdAsync(id: Long, callback: PostRepository.PostCallback<Post>) {
         val request = Request.Builder()
             .post(RequestBody.EMPTY)
             .url("${BASE_URL}/api/slow/posts/${id}/likes")
@@ -111,7 +111,7 @@ class PostRepositoryNetworkImpl : PostRepository {
             .let { gson.fromJson(it, Post::class.java) }
     }
 
-    override fun dislikeByIdAsync(id: Long, callback: PostRepository.PostBodyCallback) {
+    override fun dislikeByIdAsync(id: Long, callback: PostRepository.PostCallback<Post>) {
         val request = Request.Builder()
             .delete()
             .url("${BASE_URL}/api/slow/posts/$id/likes")
@@ -150,7 +150,7 @@ class PostRepositoryNetworkImpl : PostRepository {
             .close()
     }
 
-    override fun removeBiIdAsync(id: Long, callback: PostRepository.EmptyBodyCallback) {
+    override fun removeBiIdAsync(id: Long, callback: PostRepository.PostCallback<Unit>) {
         val request = Request.Builder()
             .delete()
             .url("${BASE_URL}/api/slow/posts/$id")
@@ -160,7 +160,7 @@ class PostRepositoryNetworkImpl : PostRepository {
             .enqueue(object : Callback {
                 override fun onResponse(call: Call, response: Response) {
                     if (response.isSuccessful) {
-                        callback.onSuccess()
+                        callback.onSuccess(Unit)
                     } else {
                         callback.onError(RuntimeException("Ощибка удаленния"))
                     }
@@ -185,7 +185,7 @@ class PostRepositoryNetworkImpl : PostRepository {
             .close()
     }
 
-    override fun saveAsync(post: Post, callback: PostRepository.PostBodyCallback) {
+    override fun saveAsync(post: Post, callback: PostRepository.PostCallback<Post>) {
         val request = Request.Builder()
             .post(gson.toJson(post).toRequestBody(jsonType))
             .url("${BASE_URL}/api/slow/posts")

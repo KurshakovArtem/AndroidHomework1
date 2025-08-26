@@ -52,9 +52,9 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
 
     fun loadPosts() {
         _data.postValue(FeedModel(loading = true))
-        repository.getAllAsync(object : PostRepository.GetAllCallback {
-            override fun onSuccess(posts: List<Post>) {
-                _data.postValue(FeedModel(posts = posts, empty = posts.isEmpty()))
+        repository.getAllAsync(object : PostRepository.PostCallback<List<Post>> {
+            override fun onSuccess(result: List<Post>) {
+                _data.postValue(FeedModel(posts = result, empty = result.isEmpty()))
             }
 
             override fun onError(e: Exception) {
@@ -85,13 +85,13 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
     fun likeById(id: Long) {
         val isLiked = data.value?.posts?.find { it.id == id }?.likedByMe ?: return
         if (!isLiked) {
-            repository.likeByIdAsync(id, object : PostRepository.PostBodyCallback {
-                override fun onSuccess(post: Post) {
+            repository.likeByIdAsync(id, object : PostRepository.PostCallback<Post> {
+                override fun onSuccess(result: Post) {
                     _data.postValue(
                         _data.value?.copy(
                             posts = _data.value?.posts.orEmpty().map {
                                 if (it.id == id) {
-                                    post
+                                    result
                                 } else it
                             }
                         )
@@ -103,13 +103,13 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
                 }
             })
         } else {
-            repository.dislikeByIdAsync(id, object : PostRepository.PostBodyCallback {
-                override fun onSuccess(post: Post) {
+            repository.dislikeByIdAsync(id, object : PostRepository.PostCallback<Post> {
+                override fun onSuccess(result: Post) {
                     _data.postValue(
                         _data.value?.copy(
                             posts = _data.value?.posts.orEmpty().map {
                                 if (it.id == id) {
-                                    post
+                                    result
                                 } else it
                             }
                         )
@@ -150,8 +150,8 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
                     .filter { it.id != id }
             )
         )
-        repository.removeBiIdAsync(id, object : PostRepository.EmptyBodyCallback {
-            override fun onSuccess() {
+        repository.removeBiIdAsync(id, object : PostRepository.PostCallback<Unit> {
+            override fun onSuccess(result: Unit) {
                 _data.postValue(
                     _data.value?.copy(
                         posts = _data.value?.posts.orEmpty().filter { it.id != id })
@@ -180,20 +180,34 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
 //    }
 
     fun save(content: String) {
-        edited.value?.let {
+        edited.value?.let { editPost ->
             val text = content.trim()       //отсекает все пробелы в начале и конце
 
-            if (text != it.content) {
+            if (text != editPost.content) {
                 repository.saveAsync(
-                    it.copy(content = text),
-                    object : PostRepository.PostBodyCallback {
-                        override fun onSuccess(post: Post) {
-                            val newListPosts = listOf(post) + _data.value?.posts.orEmpty()
-                            _data.postValue(
-                                _data.value?.copy(
-                                    posts = newListPosts
+                    editPost.copy(content = text),
+                    object : PostRepository.PostCallback<Post> {
+                        override fun onSuccess(result: Post) {
+                            if (editPost.id == 0L) {
+                                val newListPosts = listOf(result) + _data.value?.posts.orEmpty()
+                                _data.postValue(
+                                    _data.value?.copy(
+                                        posts = newListPosts
+                                    )
                                 )
-                            )
+                            } else {
+                                val newListPosts = _data.value?.posts.orEmpty().map {
+                                    if (it.id == result.id) {
+                                        result
+                                    } else it
+                                }
+                                _data.postValue(
+                                    _data.value?.copy(
+                                        posts = newListPosts
+                                    )
+                                )
+                            }
+
                             _postCreated.postValue(Unit)
                         }
 
@@ -205,6 +219,8 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
                     })
             }
         }
+        if (edited.value?.id == 0L) repository.setDraft("")  // очищаем черновик
+        edited.value = empty
     }
 
     fun edit(post: Post) {
