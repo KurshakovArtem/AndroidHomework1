@@ -11,6 +11,7 @@ import ru.netology.nmedia.R
 import ru.netology.nmedia.databinding.CardPostBinding
 import ru.netology.nmedia.dto.Post
 import ru.netology.nmedia.supportingFunctions.converterNumToString
+import ru.netology.nmedia.supportingFunctions.load
 
 
 interface OnInteractionListener {
@@ -47,6 +48,9 @@ class PostViewHolder(
         content.text = post.content
         shareButton.text = converterNumToString(post.share)
         valuePostViews.text = converterNumToString(post.postViews)
+        if (post.authorAvatar.isBlank()){
+            avatar.setImageResource(R.drawable.ic_empty_avatar_24)
+        } else avatar.load("http://10.0.2.2:9999/avatars/${post.authorAvatar}")
 
         likeButton.apply {
             isChecked = post.likedByMe
