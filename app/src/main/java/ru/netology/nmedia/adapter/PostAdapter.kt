@@ -9,9 +9,11 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import ru.netology.nmedia.R
 import ru.netology.nmedia.databinding.CardPostBinding
+import ru.netology.nmedia.dto.AttachmentType
 import ru.netology.nmedia.dto.Post
 import ru.netology.nmedia.supportingFunctions.converterNumToString
-import ru.netology.nmedia.supportingFunctions.load
+import ru.netology.nmedia.supportingFunctions.loadAttachmentImage
+import ru.netology.nmedia.supportingFunctions.loadAvatar
 
 
 interface OnInteractionListener {
@@ -48,9 +50,9 @@ class PostViewHolder(
         content.text = post.content
         shareButton.text = converterNumToString(post.share)
         valuePostViews.text = converterNumToString(post.postViews)
-        if (post.authorAvatar.isBlank()){
+        if (post.authorAvatar.isBlank()) {
             avatar.setImageResource(R.drawable.ic_empty_avatar_24)
-        } else avatar.load("http://10.0.2.2:9999/avatars/${post.authorAvatar}")
+        } else avatar.loadAvatar("http://10.0.2.2:9999/avatars/${post.authorAvatar}")
 
         likeButton.apply {
             isChecked = post.likedByMe
@@ -86,14 +88,23 @@ class PostViewHolder(
                 }
             }.show()
         }
-
-        if (post.videoUrl.isNullOrBlank()) {
-            videoGroup.visibility = View.GONE
+        if (post.attachment == null) {
+            attachmentGroup.visibility = View.GONE
         } else {
-            videoGroup.visibility = View.VISIBLE
-            urlText.text = post.videoUrl
-            videoGroup.setOnClickListener {
-                onInteractionListener.onVideo(post)
+            attachmentGroup.visibility = View.VISIBLE
+            when (post.attachment.type) {
+                AttachmentType.IMAGE -> {
+                    attachmentText.text = post.attachment.description
+                    attachmentPost.loadAttachmentImage("http://10.0.2.2:9999/images/${post.attachment.url}")
+                }
+
+                AttachmentType.VIDEO -> {
+                    attachmentText.text = post.attachment.description
+                    attachmentPost.setImageResource(R.drawable.video_not_found)
+                    attachmentGroup.setOnClickListener {
+                        onInteractionListener.onVideo(post)
+                    }
+                }
             }
         }
     }

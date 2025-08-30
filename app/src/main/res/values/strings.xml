@@ -16,7 +16,7 @@
     <string name="description_edit_post_close_button">Close edit post</string>
     <string name="chooser_share_post">Share post</string>
     <string name="add_post">Add post</string>
-    <string name="description_video">Video</string>
+    <string name="description_attachment">Attachment</string>
     <string name="chooser_open_video">Open video</string>
     <string name="google_play_unavailable">Google Api Unavailable</string>
     <string name="channel_remote_name">Server notifications</string>

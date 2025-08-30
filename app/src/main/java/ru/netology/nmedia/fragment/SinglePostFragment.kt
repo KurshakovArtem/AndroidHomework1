@@ -58,7 +58,7 @@ class SinglePostFragment : Fragment() {
             override fun onVideo(post: Post) {
                 val intent = Intent().apply {
                     action = Intent.ACTION_VIEW
-                    data = post.videoUrl?.toUri()
+                    data = post.attachment?.url?.toUri()
                 }
                 val videoIntent =
                     Intent.createChooser(intent, getString(R.string.chooser_open_video))
