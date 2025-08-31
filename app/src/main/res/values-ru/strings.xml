@@ -17,7 +17,7 @@
     <string name="description_edit_post_close_button">Отменить изменение поста</string>
     <string name="chooser_share_post">Поделиться</string>
     <string name="add_post">Добавить пост</string>
-    <string name="description_video">Видео</string>
+    <string name="description_attachment">Вложения</string>
     <string name="chooser_open_video">открыть видео</string>
     <string name="google_play_unavailable">Google API недоступен</string>
     <string name="channel_remote_name">Уведомления сервера</string>

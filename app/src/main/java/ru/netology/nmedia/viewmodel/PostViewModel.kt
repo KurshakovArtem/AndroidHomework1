@@ -38,18 +38,6 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
         loadPosts()
     }
 
-//    fun loadPosts() {
-//        thread {
-//            _data.postValue(FeedModel(loading = true))
-//            try {
-//                val posts = repository.getAll()
-//                FeedModel(posts = posts, empty = posts.isEmpty())
-//            } catch (e: Exception) {
-//                FeedModel(error = true)
-//            }.also(_data::postValue)
-//        }
-//    }
-
     fun loadPosts() {
         _data.postValue(FeedModel(loading = true))
         repository.getAllAsync(object : PostRepository.PostCallback<List<Post>> {
@@ -62,25 +50,6 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
             }
         })
     }
-
-//    fun likeById(id: Long) {
-//        val isLiked = data.value?.posts?.find { it.id == id }?.likedByMe ?: return
-//        thread {
-//            _data.postValue(
-//                _data.value?.copy(
-//                    posts = _data.value?.posts.orEmpty().map { post ->
-//                        if (post.id == id) {
-//                            if (!isLiked) {
-//                                repository.likeById(id)
-//                            } else {
-//                                repository.dislikeById(id)
-//                            }
-//                        } else post
-//                    }
-//                )
-//            )
-//        }
-//    }
 
     fun likeById(id: Long) {
         val isLiked = data.value?.posts?.find { it.id == id }?.likedByMe ?: return
@@ -125,22 +94,6 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
 
     fun shareById(id: Long) = repository.shareById(id)
 
-//    fun removeById(id: Long) {
-//        thread {
-//            val old = _data.value?.posts.orEmpty()
-//            _data.postValue(
-//                _data.value?.copy(
-//                    posts = _data.value?.posts.orEmpty()
-//                        .filter { it.id != id }
-//                )
-//            )
-//            try {
-//                repository.removeById(id)
-//            } catch (e: IOException) {
-//                _data.postValue(_data.value?.copy(posts = old))
-//            }
-//        }
-//    }
 
     fun removeById(id: Long) {
         val old = _data.value?.posts.orEmpty()
@@ -164,20 +117,6 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
             }
         })
     }
-
-//    fun save(content: String) {
-//        edited.value?.let {
-//            val text = content.trim()       //отсекает все пробелы в начале и конце
-//            if (text != it.content) {
-//                thread {
-//                    repository.save(it.copy(content = text))
-//                    _postCreated.postValue(Unit)
-//                }
-//            }
-//        }
-//        if (edited.value?.id == 0L) repository.setDraft("")  // очищаем черновик
-//        edited.value = empty
-//    }
 
     fun save(content: String) {
         edited.value?.let { editPost ->
