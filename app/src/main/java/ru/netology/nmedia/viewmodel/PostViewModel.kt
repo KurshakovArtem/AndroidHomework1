@@ -42,11 +42,11 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
         _data.postValue(FeedModel(loading = true))
         repository.getAllAsync(object : PostRepository.PostCallback<List<Post>> {
             override fun onSuccess(result: List<Post>) {
-                _data.postValue(FeedModel(posts = result, empty = result.isEmpty()))
+                _data.value = FeedModel(posts = result, empty = result.isEmpty())
             }
 
-            override fun onError(e: Exception) {
-                _data.postValue(FeedModel(error = true))
+            override fun onError(e: Throwable) {
+                _data.value = FeedModel(error = true)
             }
         })
     }
@@ -56,7 +56,7 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
         if (!isLiked) {
             repository.likeByIdAsync(id, object : PostRepository.PostCallback<Post> {
                 override fun onSuccess(result: Post) {
-                    _data.postValue(
+                    _data.value =
                         _data.value?.copy(
                             posts = _data.value?.posts.orEmpty().map {
                                 if (it.id == id) {
@@ -64,17 +64,16 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
                                 } else it
                             }
                         )
-                    )
                 }
 
-                override fun onError(e: Exception) {
+                override fun onError(e: Throwable) {
                     showErrorToast("Ощибка добавления Like")
                 }
             })
         } else {
             repository.dislikeByIdAsync(id, object : PostRepository.PostCallback<Post> {
                 override fun onSuccess(result: Post) {
-                    _data.postValue(
+                    _data.value =
                         _data.value?.copy(
                             posts = _data.value?.posts.orEmpty().map {
                                 if (it.id == id) {
@@ -82,10 +81,9 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
                                 } else it
                             }
                         )
-                    )
                 }
 
-                override fun onError(e: Exception) {
+                override fun onError(e: Throwable) {
                     showErrorToast("Ощибка удаления Like")
                 }
             })
@@ -97,22 +95,20 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
 
     fun removeById(id: Long) {
         val old = _data.value?.posts.orEmpty()
-        _data.postValue(
+        _data.value =
             _data.value?.copy(
                 posts = _data.value?.posts.orEmpty()
                     .filter { it.id != id }
             )
-        )
         repository.removeBiIdAsync(id, object : PostRepository.PostCallback<Unit> {
             override fun onSuccess(result: Unit) {
-                _data.postValue(
+                _data.value =
                     _data.value?.copy(
                         posts = _data.value?.posts.orEmpty().filter { it.id != id })
-                )
             }
 
-            override fun onError(e: Exception) {
-                _data.postValue(_data.value?.copy(posts = old))
+            override fun onError(e: Throwable) {
+                _data.value = _data.value?.copy(posts = old)
                 showErrorToast("Не удалось удалить пост")
             }
         })
@@ -129,28 +125,26 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
                         override fun onSuccess(result: Post) {
                             if (editPost.id == 0L) {
                                 val newListPosts = listOf(result) + _data.value?.posts.orEmpty()
-                                _data.postValue(
+                                _data.value =
                                     _data.value?.copy(
                                         posts = newListPosts
                                     )
-                                )
                             } else {
                                 val newListPosts = _data.value?.posts.orEmpty().map {
                                     if (it.id == result.id) {
                                         result
                                     } else it
                                 }
-                                _data.postValue(
+                                _data.value =
                                     _data.value?.copy(
                                         posts = newListPosts
                                     )
-                                )
                             }
 
                             _postCreated.postValue(Unit)
                         }
 
-                        override fun onError(e: Exception) {
+                        override fun onError(e: Throwable) {
                             showErrorToast("Не удалось добавить пост")
                             _postCreated.postValue(Unit)
                         }

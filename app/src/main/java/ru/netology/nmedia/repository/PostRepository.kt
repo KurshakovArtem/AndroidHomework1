@@ -3,12 +3,7 @@ package ru.netology.nmedia.repository
 import ru.netology.nmedia.dto.Post
 
 interface PostRepository {
-    fun getAll(): List<Post>
-    fun likeById(id: Long): Post
-    fun dislikeById(id: Long): Post
     fun shareById(id: Long)
-    fun removeById(id: Long)
-    fun save(post: Post)
     fun getDraft(): String
     fun setDraft(content: String)
     fun getAllAsync(callback: PostCallback<List<Post>>)
@@ -19,6 +14,6 @@ interface PostRepository {
 
     interface PostCallback<T> {
         fun onSuccess(result: T)
-        fun onError(e: Exception)
+        fun onError(e: Throwable)
     }
 }
