@@ -9,12 +9,14 @@ import androidx.core.net.toUri
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
+import com.google.android.material.snackbar.Snackbar
 import ru.netology.nmedia.R
 import ru.netology.nmedia.adapter.OnInteractionListener
 import ru.netology.nmedia.adapter.PostViewHolder
 import ru.netology.nmedia.databinding.FragmentSinglePostBinding
 import ru.netology.nmedia.dto.Post
 import ru.netology.nmedia.fragment.NewPostFragment.Companion.textArg
+import ru.netology.nmedia.model.FeedErrorMassage
 import ru.netology.nmedia.viewmodel.PostViewModel
 import kotlin.getValue
 
@@ -86,6 +88,42 @@ class SinglePostFragment : Fragment() {
         viewModel.data.observe(viewLifecycleOwner) { state ->
             val post = state.posts.find { it.id == postId } ?: return@observe
             postViewHolder.bind(post)
+            when (state.errorReport?.feedErrorMassage) {
+                FeedErrorMassage.LIKE_ERROR -> {
+                    Snackbar.make(binding.root, R.string.like_error, Snackbar.LENGTH_LONG)
+                        .setAction(R.string.retry_loading) {
+                            val postId = state.errorReport.postIdError
+                            viewModel.likeById(postId)
+                        }
+                        .show()
+                }
+
+                FeedErrorMassage.DISLIKE_ERROR -> {
+                    Snackbar.make(binding.root, R.string.dislike_error, Snackbar.LENGTH_LONG)
+                        .setAction(R.string.retry_loading) {
+                            val postId = state.errorReport.postIdError
+                            viewModel.likeById(postId)
+                        }
+                        .show()
+                }
+
+                FeedErrorMassage.REMOVE_ERROR -> {
+                    Snackbar.make(binding.root, R.string.remove_error, Snackbar.LENGTH_LONG)
+                        .setAction(R.string.retry_loading) {
+                            val postId = state.errorReport.postIdError
+                            viewModel.removeById(postId)
+                        }
+                        .show()
+                }
+
+                FeedErrorMassage.SAVE_ERROR -> {
+                    Snackbar.make(binding.root, R.string.save_error, Snackbar.LENGTH_LONG)
+                        .setAction("Ok") { } // реализовать после добавления БД (room)
+                        .show()
+                }
+
+                null -> {} //нет смысла уведомлять об успешной операции
+            }
         }
         return binding.root
     }

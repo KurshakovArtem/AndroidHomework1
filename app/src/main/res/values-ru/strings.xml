@@ -28,4 +28,8 @@
     <string name="error_loading">Что-то пошло не так. Попробуйте позже.</string>
     <string name="retry_loading">Повторить</string>
     <string name="empty_posts">Нет ни одного поста.</string>
+    <string name="remove_error">Ошибка удаления</string>
+    <string name="save_error">Не удалось сохранить пост</string>
+    <string name="like_error">Ошибка добавления Like</string>
+    <string name="dislike_error">Ошибка удаления Like</string>
 </resources>

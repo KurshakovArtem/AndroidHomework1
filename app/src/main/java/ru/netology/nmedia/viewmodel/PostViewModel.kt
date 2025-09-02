@@ -1,14 +1,12 @@
 package ru.netology.nmedia.viewmodel
 
 import android.app.Application
-import android.os.Handler
-import android.os.Looper
-import android.widget.Toast
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.application
 import ru.netology.nmedia.dto.Post
+import ru.netology.nmedia.model.ErrorReport
+import ru.netology.nmedia.model.FeedErrorMassage
 import ru.netology.nmedia.model.FeedModel
 import ru.netology.nmedia.repository.PostRepository
 import ru.netology.nmedia.repository.PostRepositoryNetworkImpl
@@ -62,12 +60,15 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
                                 if (it.id == id) {
                                     result
                                 } else it
-                            }
+                            },
+                            errorReport = null
                         )
                 }
 
                 override fun onError(e: Throwable) {
-                    showErrorToast("Ощибка добавления Like")
+                    _data.value = _data.value?.copy(
+                        errorReport = ErrorReport(id, FeedErrorMassage.LIKE_ERROR)
+                    )
                 }
             })
         } else {
@@ -79,12 +80,15 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
                                 if (it.id == id) {
                                     result
                                 } else it
-                            }
+                            },
+                            errorReport = null
                         )
                 }
 
                 override fun onError(e: Throwable) {
-                    showErrorToast("Ощибка удаления Like")
+                    _data.value = _data.value?.copy(
+                        errorReport = ErrorReport(id, FeedErrorMassage.DISLIKE_ERROR)
+                    )
                 }
             })
         }
@@ -98,18 +102,16 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
         _data.value =
             _data.value?.copy(
                 posts = _data.value?.posts.orEmpty()
-                    .filter { it.id != id }
+                    .filter { it.id != id }, errorReport = null
             )
         repository.removeBiIdAsync(id, object : PostRepository.PostCallback<Unit> {
-            override fun onSuccess(result: Unit) {
-                _data.value =
-                    _data.value?.copy(
-                        posts = _data.value?.posts.orEmpty().filter { it.id != id })
-            }
+            override fun onSuccess(result: Unit) {}
 
             override fun onError(e: Throwable) {
-                _data.value = _data.value?.copy(posts = old)
-                showErrorToast("Не удалось удалить пост")
+                _data.value = _data.value?.copy(
+                    posts = old,
+                    errorReport = ErrorReport(id, FeedErrorMassage.REMOVE_ERROR)
+                )
             }
         })
     }
@@ -127,7 +129,7 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
                                 val newListPosts = listOf(result) + _data.value?.posts.orEmpty()
                                 _data.value =
                                     _data.value?.copy(
-                                        posts = newListPosts
+                                        posts = newListPosts, errorReport = null
                                     )
                             } else {
                                 val newListPosts = _data.value?.posts.orEmpty().map {
@@ -137,7 +139,7 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
                                 }
                                 _data.value =
                                     _data.value?.copy(
-                                        posts = newListPosts
+                                        posts = newListPosts, errorReport = null
                                     )
                             }
 
@@ -145,7 +147,10 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
                         }
 
                         override fun onError(e: Throwable) {
-                            showErrorToast("Не удалось добавить пост")
+                            _data.value =
+                                _data.value?.copy(
+                                    errorReport = ErrorReport(0, FeedErrorMassage.SAVE_ERROR)
+                                )
                             _postCreated.postValue(Unit)
                         }
 
@@ -173,10 +178,4 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun getDraft() = repository.getDraft()
-
-    private fun showErrorToast(message: String) {
-        Handler(Looper.getMainLooper()).post {
-            Toast.makeText(application, message, Toast.LENGTH_LONG).show()
-        }
-    }
 }
