@@ -105,6 +105,10 @@ class PostViewHolder(
                         onInteractionListener.onVideo(post)
                     }
                 }
+
+                AttachmentType.EMPTY -> {
+                    attachmentGroup.visibility = View.GONE
+                }
             }
         }
     }

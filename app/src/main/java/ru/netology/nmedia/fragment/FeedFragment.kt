@@ -14,7 +14,6 @@ import com.google.android.material.snackbar.Snackbar
 import ru.netology.nmedia.R
 import ru.netology.nmedia.adapter.OnInteractionListener
 import ru.netology.nmedia.adapter.PostAdapter
-import ru.netology.nmedia.databinding.ErrorViewBinding
 import ru.netology.nmedia.databinding.FragmentFeedBinding
 import ru.netology.nmedia.dto.Post
 import ru.netology.nmedia.fragment.NewPostFragment.Companion.textArg
@@ -37,10 +36,10 @@ class FeedFragment : Fragment() {
             false
         )
 
-        binding.swiperefresh.setOnRefreshListener {
-            viewModel.loadPosts()
-            binding.swiperefresh.isRefreshing = false
-        }
+//        binding.swiperefresh.setOnRefreshListener {
+//            viewModel.loadPosts()
+//            binding.swiperefresh.isRefreshing = false
+//        }
 
         val adapter = PostAdapter(
             object : OnInteractionListener {
@@ -98,13 +97,23 @@ class FeedFragment : Fragment() {
         )
 
         binding.list.adapter = adapter
-        val errorMergeBinding = ErrorViewBinding.bind(binding.root)
 
-        viewModel.data.observe(viewLifecycleOwner) { state ->
-            adapter.submitList(state.posts)
+        binding.swiperefresh.setOnRefreshListener {
+            viewModel.refresh()
+        }
+
+        viewModel.dataState.observe(viewLifecycleOwner) { state ->
             binding.progress.isVisible = state.loading
-            binding.emptyText.isVisible = state.empty
-            errorMergeBinding.errorGroup.isVisible = state.error
+            binding.swiperefresh.isRefreshing = state.refreshing
+            //errorMergeBinding.errorGroup.isVisible = state.error
+            if (state.error) {
+                Snackbar.make(binding.root, R.string.error_loading, Snackbar.LENGTH_LONG)
+                    .setAction(R.string.retry_loading) {
+                        viewModel.loadPosts()
+                    }
+                    .show()
+            }
+
             when (state.errorReport?.feedErrorMassage) {
                 FeedErrorMassage.LIKE_ERROR -> {
                     Snackbar.make(binding.root, R.string.like_error, Snackbar.LENGTH_LONG)
@@ -143,9 +152,17 @@ class FeedFragment : Fragment() {
             }
         }
 
-        errorMergeBinding.retryButton.setOnClickListener {
-            viewModel.loadPosts()
+
+
+
+        viewModel.data.observe(viewLifecycleOwner) { state ->
+            adapter.submitList(state.posts)
+            binding.emptyText.isVisible = state.empty
         }
+
+//        errorMergeBinding.retryButton.setOnClickListener {
+//            viewModel.loadPosts()
+//        }
 
         binding.fab.setOnClickListener {
             findNavController().navigate(R.id.action_feedFragment_to_newPostFragment)

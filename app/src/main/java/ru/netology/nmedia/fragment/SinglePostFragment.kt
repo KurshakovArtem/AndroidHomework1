@@ -85,9 +85,7 @@ class SinglePostFragment : Fragment() {
             findNavController().navigateUp()
         }
 
-        viewModel.data.observe(viewLifecycleOwner) { state ->
-            val post = state.posts.find { it.id == postId } ?: return@observe
-            postViewHolder.bind(post)
+        viewModel.dataState.observe(viewLifecycleOwner) { state ->
             when (state.errorReport?.feedErrorMassage) {
                 FeedErrorMassage.LIKE_ERROR -> {
                     Snackbar.make(binding.root, R.string.like_error, Snackbar.LENGTH_LONG)
@@ -124,6 +122,11 @@ class SinglePostFragment : Fragment() {
 
                 null -> {} //нет смысла уведомлять об успешной операции
             }
+        }
+
+        viewModel.data.observe(viewLifecycleOwner) { state ->
+            val post = state.posts.find { it.id == postId } ?: return@observe
+            postViewHolder.bind(post)
         }
         return binding.root
     }
