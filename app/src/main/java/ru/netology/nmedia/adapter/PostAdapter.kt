@@ -23,6 +23,7 @@ interface OnInteractionListener {
     fun onShare(post: Post) {}
     fun onVideo(post: Post) {}
     fun onMoveToSinglePost(post: Post) {}
+    fun onSaveRefresh(post: Post) {}
 }
 
 class PostAdapter(
@@ -54,16 +55,27 @@ class PostViewHolder(
             avatar.setImageResource(R.drawable.ic_empty_avatar_24)
         } else avatar.loadAvatar("http://10.0.2.2:9999/avatars/${post.authorAvatar}")
 
-        likeButton.apply {
-            isChecked = post.likedByMe
-            text = converterNumToString(post.likes)
-        }
+        if (post.syncServerState) {
+            saveRefresh.visibility = View.GONE
+            likeButton.apply {
+                isChecked = post.likedByMe
+                text = converterNumToString(post.likes)
+            }
 
-        likeButton.setOnClickListener {
-            onInteractionListener.onLike(post)
-        }
-        shareButton.setOnClickListener {
-            onInteractionListener.onShare(post)
+            likeButton.setOnClickListener {
+                onInteractionListener.onLike(post)
+            }
+            shareButton.setOnClickListener {
+                onInteractionListener.onShare(post)
+            }
+        } else {
+            likeButton.visibility = View.GONE
+            shareButton.visibility = View.GONE
+            saveRefresh.visibility = View.VISIBLE
+
+            saveRefresh.setOnClickListener {
+                onInteractionListener.onSaveRefresh(post)
+            }
         }
         cardPost.setOnClickListener {
             onInteractionListener.onMoveToSinglePost(post)

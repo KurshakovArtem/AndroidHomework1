@@ -9,7 +9,16 @@ import ru.netology.nmedia.entity.PostEntity
 
 @Dao
 interface PostDao {
-    @Query("SELECT * FROM PostEntity ORDER BY id DESC")
+
+    @Query("""
+    SELECT * FROM PostEntity 
+    ORDER BY 
+        CASE 
+            WHEN id <= 0 THEN 0   
+            ELSE 1               
+        END,
+        id DESC
+""")
     fun getAll(): LiveData<List<PostEntity>>
 
     @Query("SELECT * FROM PostEntity WHERE id = :id LIMIT 1")

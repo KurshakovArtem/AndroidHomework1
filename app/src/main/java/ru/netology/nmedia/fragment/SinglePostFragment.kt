@@ -18,6 +18,7 @@ import ru.netology.nmedia.dto.Post
 import ru.netology.nmedia.fragment.NewPostFragment.Companion.textArg
 import ru.netology.nmedia.model.FeedErrorMassage
 import ru.netology.nmedia.viewmodel.PostViewModel
+import java.lang.RuntimeException
 import kotlin.getValue
 
 class SinglePostFragment : Fragment() {
@@ -38,6 +39,10 @@ class SinglePostFragment : Fragment() {
         val interactionListener = object : OnInteractionListener {
             override fun onLike(post: Post) {
                 viewModel.likeById(post.id)
+            }
+
+            override fun onSaveRefresh(post: Post) {
+                viewModel.saveRefresh(post)
             }
 
             override fun onShare(post: Post) {
@@ -116,7 +121,27 @@ class SinglePostFragment : Fragment() {
 
                 FeedErrorMassage.SAVE_ERROR -> {
                     Snackbar.make(binding.root, R.string.save_error, Snackbar.LENGTH_LONG)
-                        .setAction("Ok") { } // реализовать после добавления БД (room)
+                        .setAction(R.string.retry_loading) {
+                            val post =
+                                viewModel.data.value?.posts?.find {
+                                    it.id == state.errorReport.postIdError
+                                }
+                                    ?: throw RuntimeException("Post error")
+                            viewModel.saveRefresh(post)
+                        }
+                        .show()
+                }
+
+                FeedErrorMassage.SAVE_REFRESH_ERROR -> {
+                    Snackbar.make(binding.root, R.string.save_error, Snackbar.LENGTH_LONG)
+                        .setAction(R.string.retry_loading) {
+                            val post =
+                                viewModel.data.value?.posts?.find {
+                                    it.id == state.errorReport.postIdError
+                                }
+                                    ?: throw RuntimeException("Post error")
+                            viewModel.saveRefresh(post)
+                        }
                         .show()
                 }
 

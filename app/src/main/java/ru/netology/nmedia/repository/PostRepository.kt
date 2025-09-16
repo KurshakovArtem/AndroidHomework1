@@ -11,6 +11,7 @@ interface PostRepository {
     suspend fun getAllAsync()
     suspend fun removeBiIdAsync(id: Long)
     suspend fun saveAsync(post: Post): Post
+    suspend fun retrySaveAsync(post: Post): Post
     suspend fun likeByIdAsync(id: Long)
     fun isEmpty(): LiveData<Boolean>
 }

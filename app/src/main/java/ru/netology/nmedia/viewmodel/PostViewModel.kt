@@ -6,7 +6,6 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.asFlow
 import androidx.lifecycle.asLiveData
-import androidx.lifecycle.map
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
@@ -57,7 +56,7 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
             try {
                 repository.getAllAsync()
                 _dataState.value = FeedModelState()
-            } catch (_: Exception) {
+            } catch (_: RuntimeException) {
                 _dataState.value = FeedModelState(error = true)
             }
         }
@@ -69,7 +68,7 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
             try {
                 repository.getAllAsync()
                 _dataState.value = FeedModelState()
-            } catch (_: Exception) {
+            } catch (_: RuntimeException) {
                 _dataState.value = FeedModelState(error = true)
             }
         }
@@ -82,12 +81,21 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
             if (text != editPost.content) {
                 viewModelScope.launch {
                     try {
-                        repository.saveAsync(editPost.copy(content = content))
-                        _dataState.value = FeedModelState(errorReport = null)
-                    } catch (_: Exception) {
+                        val savedPost = repository.saveAsync(editPost.copy(content = content))
+                        if (savedPost.syncServerState) {
+                            _dataState.value = FeedModelState(errorReport = null)
+                        } else {
+                            _dataState.value = FeedModelState(
+                                errorReport = ErrorReport(
+                                    savedPost.id,
+                                    FeedErrorMassage.SAVE_ERROR
+                                )
+                            )
+                        }
+                    } catch (_: RuntimeException) {
                         _dataState.value = FeedModelState(
                             errorReport = ErrorReport(
-                                0,
+                                edited.value?.id ?: 0,
                                 FeedErrorMassage.SAVE_ERROR
                             )
                         )
@@ -97,6 +105,31 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
         }
         if (edited.value?.id == 0L) repository.setDraft("")  // очищаем черновик
         edited.value = empty
+    }
+
+    fun saveRefresh(post: Post) {
+        viewModelScope.launch {
+            try {
+                val refreshingPost = repository.retrySaveAsync(post)
+                if (refreshingPost.syncServerState){
+                    _dataState.value = FeedModelState(errorReport = null)
+                } else {
+                    _dataState.value = FeedModelState(
+                        errorReport = ErrorReport(
+                            refreshingPost.id,
+                            FeedErrorMassage.SAVE_REFRESH_ERROR
+                        )
+                    )
+                }
+            } catch (_: RuntimeException){
+                _dataState.value = FeedModelState(
+                    errorReport = ErrorReport(
+                        post.id,
+                        FeedErrorMassage.SAVE_REFRESH_ERROR
+                    )
+                )
+            }
+        }
     }
 
     fun likeById(id: Long) {
@@ -161,131 +194,3 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
 
     fun getDraft() = repository.getDraft()
 }
-
-
-
-
-//    fun loadPosts() {
-//        _data.postValue(FeedModel(loading = true))
-//        repository.getAllAsync(object : PostRepository.PostCallback<List<Post>> {
-//            override fun onSuccess(result: List<Post>) {
-//                _data.value = FeedModel(posts = result, empty = result.isEmpty())
-//            }
-//
-//            override fun onError(e: Throwable) {
-//                _data.value = FeedModel(error = true)
-//            }
-//        })
-//    }
-
-//    fun likeById(id: Long) {
-//        val isLiked = data.value?.posts?.find { it.id == id }?.likedByMe ?: return
-//        if (!isLiked) {
-//            repository.likeByIdAsync(id, object : PostRepository.PostCallback<Post> {
-//                override fun onSuccess(result: Post) {
-//                    _data.value =
-//                        _data.value?.copy(
-//                            posts = _data.value?.posts.orEmpty().map {
-//                                if (it.id == id) {
-//                                    result
-//                                } else it
-//                            },
-//                            errorReport = null
-//                        )
-//                }
-//
-//                override fun onError(e: Throwable) {
-//                    _data.value = _data.value?.copy(
-//                        errorReport = ErrorReport(id, FeedErrorMassage.LIKE_ERROR)
-//                    )
-//                }
-//            })
-//        } else {
-//            repository.dislikeByIdAsync(id, object : PostRepository.PostCallback<Post> {
-//                override fun onSuccess(result: Post) {
-//                    _data.value =
-//                        _data.value?.copy(
-//                            posts = _data.value?.posts.orEmpty().map {
-//                                if (it.id == id) {
-//                                    result
-//                                } else it
-//                            },
-//                            errorReport = null
-//                        )
-//                }
-//
-//                override fun onError(e: Throwable) {
-//                    _data.value = _data.value?.copy(
-//                        errorReport = ErrorReport(id, FeedErrorMassage.DISLIKE_ERROR)
-//                    )
-//                }
-//            })
-//        }
-//    }
-
-
-
-    //    fun removeById(id: Long) {
-//        val old = _data.value?.posts.orEmpty()
-//        _data.value =
-//            _data.value?.copy(
-//                posts = _data.value?.posts.orEmpty()
-//                    .filter { it.id != id }, errorReport = null
-//            )
-//        repository.removeBiIdAsync(id, object : PostRepository.PostCallback<Unit> {
-//            override fun onSuccess(result: Unit) {}
-//
-//            override fun onError(e: Throwable) {
-//                _data.value = _data.value?.copy(
-//                    posts = old,
-//                    errorReport = ErrorReport(id, FeedErrorMassage.REMOVE_ERROR)
-//                )
-//            }
-//        })
-//    }
-//
-//    fun save(content: String) {
-//        edited.value?.let { editPost ->
-//            val text = content.trim()       //отсекает все пробелы в начале и конце
-//
-//            if (text != editPost.content) {
-//                repository.saveAsync(
-//                    editPost.copy(content = text),
-//                    object : PostRepository.PostCallback<Post> {
-//                        override fun onSuccess(result: Post) {
-//                            if (editPost.id == 0L) {
-//                                val newListPosts = listOf(result) + _data.value?.posts.orEmpty()
-//                                _data.value =
-//                                    _data.value?.copy(
-//                                        posts = newListPosts, errorReport = null
-//                                    )
-//                            } else {
-//                                val newListPosts = _data.value?.posts.orEmpty().map {
-//                                    if (it.id == result.id) {
-//                                        result
-//                                    } else it
-//                                }
-//                                _data.value =
-//                                    _data.value?.copy(
-//                                        posts = newListPosts, errorReport = null
-//                                    )
-//                            }
-//
-//                            _postCreated.postValue(Unit)
-//                        }
-//
-//                        override fun onError(e: Throwable) {
-//                            _data.value =
-//                                _data.value?.copy(
-//                                    errorReport = ErrorReport(0, FeedErrorMassage.SAVE_ERROR)
-//                                )
-//                            _postCreated.postValue(Unit)
-//                        }
-//
-//                    })
-//            }
-//        }
-//        if (edited.value?.id == 0L) repository.setDraft("")  // очищаем черновик
-//        edited.value = empty
-//    }
-

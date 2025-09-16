@@ -8,7 +8,7 @@ import ru.netology.nmedia.dto.toAttachmentType
 
 @Entity
 data class PostEntity(
-    @PrimaryKey(autoGenerate = true)
+    @PrimaryKey(autoGenerate = false)
     val id: Long,
     val author: String,
     val authorAvatar: String,
@@ -18,6 +18,7 @@ data class PostEntity(
     val likedByMe: Boolean = false,
     val share: Int = 0,
     val postViews: Int = 0,
+    val syncServerState: Boolean = true,
     val attachment: Boolean = false,
     val attachmentUrl: String = "",
     val attachmentDescription: String = "",
@@ -33,6 +34,7 @@ data class PostEntity(
         likedByMe = likedByMe,
         share = share,
         postViews = postViews,
+        syncServerState = syncServerState,
         attachment = if (!attachment) null else Attachment(
             url = attachmentUrl,
             description = attachmentDescription,
@@ -52,6 +54,7 @@ data class PostEntity(
             share = dto.share,
             postViews = dto.postViews,
             attachment = dto.attachment != null,
+            syncServerState = dto.syncServerState,
             attachmentUrl = if (dto.attachment != null) dto.attachment.url else "",
             attachmentDescription = if (dto.attachment != null) dto.attachment.description else "",
             attachmentType = if (dto.attachment != null) dto.attachment.type.toString() else "EMPTY",

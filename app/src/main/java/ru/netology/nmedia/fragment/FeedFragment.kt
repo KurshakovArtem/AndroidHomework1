@@ -36,15 +36,15 @@ class FeedFragment : Fragment() {
             false
         )
 
-//        binding.swiperefresh.setOnRefreshListener {
-//            viewModel.loadPosts()
-//            binding.swiperefresh.isRefreshing = false
-//        }
 
         val adapter = PostAdapter(
             object : OnInteractionListener {
                 override fun onLike(post: Post) {
                     viewModel.likeById(post.id)
+                }
+
+                override fun onSaveRefresh(post: Post) {
+                    viewModel.saveRefresh(post)
                 }
 
                 override fun onShare(post: Post) {
@@ -144,7 +144,27 @@ class FeedFragment : Fragment() {
 
                 FeedErrorMassage.SAVE_ERROR -> {
                     Snackbar.make(binding.root, R.string.save_error, Snackbar.LENGTH_LONG)
-                        .setAction("Ok") { } // реализовать после добавления БД (room)
+                        .setAction(R.string.retry_loading) {
+                            val post =
+                                viewModel.data.value?.posts?.find {
+                                    it.id == state.errorReport.postIdError
+                                }
+                                    ?: throw RuntimeException("Post error")
+                            viewModel.saveRefresh(post)
+                        }
+                        .show()
+                }
+
+                FeedErrorMassage.SAVE_REFRESH_ERROR -> {
+                    Snackbar.make(binding.root, R.string.save_error, Snackbar.LENGTH_LONG)
+                        .setAction(R.string.retry_loading) {
+                            val post =
+                                viewModel.data.value?.posts?.find {
+                                    it.id == state.errorReport.postIdError
+                                }
+                                    ?: throw RuntimeException("Post error")
+                            viewModel.saveRefresh(post)
+                        }
                         .show()
                 }
 
@@ -159,10 +179,6 @@ class FeedFragment : Fragment() {
             adapter.submitList(state.posts)
             binding.emptyText.isVisible = state.empty
         }
-
-//        errorMergeBinding.retryButton.setOnClickListener {
-//            viewModel.loadPosts()
-//        }
 
         binding.fab.setOnClickListener {
             findNavController().navigate(R.id.action_feedFragment_to_newPostFragment)

@@ -3,6 +3,11 @@ package ru.netology.nmedia.repository
 
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.map
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.withContext
 import ru.netology.nmedia.api.PostApi
 import ru.netology.nmedia.dao.PostDao
 import ru.netology.nmedia.dto.Post
@@ -17,18 +22,88 @@ class PostRepositoryNetworkImpl(private val dao: PostDao) : PostRepository {
 
 
     override suspend fun getAllAsync() {
-        val posts = PostApi.service.getAll()
-        dao.insert(posts.toEntity())
+        withContext(Dispatchers.IO + SupervisorJob()) {
+            try {
+                val syncServerTry = data.value.orEmpty().map { post ->
+                    async {
+                        try {
+                            if (!post.syncServerState) {
+                                retrySaveAsync(post)
+                            }
+                        } catch (_: RuntimeException) {
+                            println("+1 необновлённый пост")
+                        }
+                    }
+                }
+                syncServerTry.awaitAll()
+
+                val posts = try {
+                    PostApi.service.getAll().map { post ->
+                        // Не обновляем с сервера посты, которые отредактированны, но не синхронезированны с сервером
+                        val postId = post.id
+                        if (data.value.orEmpty().find { it.id == postId }?.syncServerState
+                                ?: false
+                        ) {
+                            post.copy(syncServerState = true)
+                        } else {
+                            data.value.orEmpty().find { it.id == postId } ?: post.copy(
+                                syncServerState = true
+                            )
+                        }
+                    }
+                } catch (_: Exception) {
+                    println("Ошибка обновления постов")
+                    throw RuntimeException()
+                }
+                dao.insert(posts.toEntity())
+            } catch (_: RuntimeException) {
+                throw RuntimeException("Server error")
+            }
+        }
     }
 
     override suspend fun saveAsync(post: Post): Post {
-        val postFromServer = PostApi.service.save(post)
-        dao.save(PostEntity.fromDto(postFromServer))
-        return postFromServer
+        val minimalId = if ((data.value?.minOfOrNull { it.id } ?: 0) >= 0) -1
+        else (data.value?.minOfOrNull { it.id } ?: 0) - 1
+        // Если новый пост, то id отрицательный
+        // Если редактируем пост, то id оригинального поста
+        val notSyncId = if (post.id != 0L) post.id else minimalId
+        //val post1 = post.copy(id = notSyncId, syncServerState = false)
+        dao.insert(PostEntity.fromDto(post.copy(id = notSyncId, syncServerState = false)))
+
+        try {
+            val postFromServer = PostApi.service.save(post).copy(syncServerState = true)
+            dao.removeById(notSyncId)
+            dao.insert(PostEntity.fromDto(postFromServer))
+            return postFromServer
+        } catch (_: Exception) {
+            return dao.getPostById(notSyncId)?.toDto()
+                ?: throw java.lang.RuntimeException("DB error")
+        }
+
+    }
+
+    override suspend fun retrySaveAsync(post: Post): Post {
+        try {
+            val postFromServer = if (post.id < 0) {
+                PostApi.service.save(post.copy(id = 0))
+            } else {
+                PostApi.service.save(post)
+            }
+            dao.removeById(post.id)
+            dao.insert(PostEntity.fromDto(postFromServer.copy(syncServerState = true)))
+            return postFromServer.copy(syncServerState = true)
+        } catch (_: Exception) {
+            throw RuntimeException("Server error")
+        }
     }
 
     override suspend fun removeBiIdAsync(id: Long) {
         val oldPost = dao.getPostById(id)?.toDto() ?: throw RuntimeException("DB error")
+        if (!oldPost.syncServerState && oldPost.id < 0) {
+            dao.removeById(id)
+            return
+        }
         try {
             dao.removeById(id)
             PostApi.service.removeById(id)
@@ -45,7 +120,7 @@ class PostRepositoryNetworkImpl(private val dao: PostDao) : PostRepository {
             dao.likeById(id)
             val postFromServer =
                 if (!isLiked) PostApi.service.likeById(id) else PostApi.service.dislikeById(id)
-            dao.save(PostEntity.fromDto(postFromServer))
+            dao.insert(PostEntity.fromDto(postFromServer.copy(syncServerState = true)))
         } catch (_: Exception) {
             dao.likeById(id)
             throw RuntimeException("Server error")
@@ -67,93 +142,3 @@ class PostRepositoryNetworkImpl(private val dao: PostDao) : PostRepository {
     }
 
 }
-//    override fun getAllAsync(callback: PostRepository.PostCallback<List<Post>>) {
-//        PostApi.service.getAll()
-//            .enqueue(object : Callback<List<Post>> {
-//                override fun onResponse(call: Call<List<Post>>, response: Response<List<Post>>) {
-//                    if (!response.isSuccessful) {
-//                        callback.onError(RuntimeException(response.message()))
-//                        return
-//                    }
-//                    callback.onSuccess(response.body() ?: throw RuntimeException("Body is null"))
-//                }
-//
-//                override fun onFailure(call: Call<List<Post>>, t: Throwable) {
-//                    callback.onError(t)
-//                }
-//            })
-//    }
-//
-//
-//    override fun likeByIdAsync(id: Long, callback: PostRepository.PostCallback<Post>) {
-//        PostApi.service.likeById(id)
-//            .enqueue(object : Callback<Post> {
-//                override fun onResponse(call: Call<Post>, response: Response<Post>) {
-//                    if (!response.isSuccessful) {
-//                        callback.onError(RuntimeException("Ощибка добавления Like"))
-//                        return
-//                    }
-//                    callback.onSuccess(response.body() ?: throw RuntimeException("Body is null"))
-//                }
-//
-//                override fun onFailure(call: Call<Post>, t: Throwable) {
-//                    callback.onError(t)
-//                }
-//            })
-//    }
-//
-//
-//    override fun dislikeByIdAsync(id: Long, callback: PostRepository.PostCallback<Post>) {
-//        PostApi.service.dislikeById(id)
-//            .enqueue(object : Callback<Post> {
-//                override fun onResponse(call: Call<Post>, response: Response<Post>) {
-//                    if (!response.isSuccessful) {
-//                        callback.onError(RuntimeException("Ощибка удаления Like"))
-//                        return
-//                    }
-//                    callback.onSuccess(response.body() ?: throw RuntimeException("Body is null"))
-//                }
-//
-//                override fun onFailure(call: Call<Post>, t: Throwable) {
-//                    callback.onError(t)
-//                }
-//            })
-//    }
-
-
-//    override fun removeBiIdAsync(id: Long, callback: PostRepository.PostCallback<Unit>) {
-//        PostApi.service.removeById(id)
-//            .enqueue(object : Callback<Unit> {
-//
-//
-//                override fun onResponse(call: Call<Unit>, response: Response<Unit>) {
-//                    if (!response.isSuccessful) {
-//                        callback.onError(RuntimeException("Ощибка удаленния"))
-//                        return
-//                    }
-//                    callback.onSuccess(Unit)
-//                }
-//
-//                override fun onFailure(call: Call<Unit>, t: Throwable) {
-//                    callback.onError(t)
-//                }
-//            })
-//    }
-//
-//    override fun saveAsync(post: Post, callback: PostRepository.PostCallback<Post>) {
-//        PostApi.service.save(post)
-//            .enqueue(object : Callback<Post> {
-//                override fun onResponse(call: Call<Post>, response: Response<Post>) {
-//                    if (!response.isSuccessful) {
-//                        callback.onError(RuntimeException("Ощибка добавления поста"))
-//                        return
-//                    }
-//                    callback.onSuccess(response.body() ?: throw RuntimeException("Body is null"))
-//                }
-//
-//                override fun onFailure(call: Call<Post>, t: Throwable) {
-//                    callback.onError(t)
-//                }
-//            })
-//    }
-
