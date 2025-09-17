@@ -14,7 +14,6 @@ import com.google.android.material.snackbar.Snackbar
 import ru.netology.nmedia.R
 import ru.netology.nmedia.adapter.OnInteractionListener
 import ru.netology.nmedia.adapter.PostAdapter
-import ru.netology.nmedia.databinding.ErrorViewBinding
 import ru.netology.nmedia.databinding.FragmentFeedBinding
 import ru.netology.nmedia.dto.Post
 import ru.netology.nmedia.fragment.NewPostFragment.Companion.textArg
@@ -37,15 +36,15 @@ class FeedFragment : Fragment() {
             false
         )
 
-        binding.swiperefresh.setOnRefreshListener {
-            viewModel.loadPosts()
-            binding.swiperefresh.isRefreshing = false
-        }
 
         val adapter = PostAdapter(
             object : OnInteractionListener {
                 override fun onLike(post: Post) {
                     viewModel.likeById(post.id)
+                }
+
+                override fun onSaveRefresh(post: Post) {
+                    viewModel.saveRefresh(post)
                 }
 
                 override fun onShare(post: Post) {
@@ -98,13 +97,23 @@ class FeedFragment : Fragment() {
         )
 
         binding.list.adapter = adapter
-        val errorMergeBinding = ErrorViewBinding.bind(binding.root)
 
-        viewModel.data.observe(viewLifecycleOwner) { state ->
-            adapter.submitList(state.posts)
+        binding.swiperefresh.setOnRefreshListener {
+            viewModel.refresh()
+        }
+
+        viewModel.dataState.observe(viewLifecycleOwner) { state ->
             binding.progress.isVisible = state.loading
-            binding.emptyText.isVisible = state.empty
-            errorMergeBinding.errorGroup.isVisible = state.error
+            binding.swiperefresh.isRefreshing = state.refreshing
+            //errorMergeBinding.errorGroup.isVisible = state.error
+            if (state.error) {
+                Snackbar.make(binding.root, R.string.error_loading, Snackbar.LENGTH_LONG)
+                    .setAction(R.string.retry_loading) {
+                        viewModel.loadPosts()
+                    }
+                    .show()
+            }
+
             when (state.errorReport?.feedErrorMassage) {
                 FeedErrorMassage.LIKE_ERROR -> {
                     Snackbar.make(binding.root, R.string.like_error, Snackbar.LENGTH_LONG)
@@ -135,7 +144,27 @@ class FeedFragment : Fragment() {
 
                 FeedErrorMassage.SAVE_ERROR -> {
                     Snackbar.make(binding.root, R.string.save_error, Snackbar.LENGTH_LONG)
-                        .setAction("Ok") { } // реализовать после добавления БД (room)
+                        .setAction(R.string.retry_loading) {
+                            val post =
+                                viewModel.data.value?.posts?.find {
+                                    it.id == state.errorReport.postIdError
+                                }
+                                    ?: throw RuntimeException("Post error")
+                            viewModel.saveRefresh(post)
+                        }
+                        .show()
+                }
+
+                FeedErrorMassage.SAVE_REFRESH_ERROR -> {
+                    Snackbar.make(binding.root, R.string.save_error, Snackbar.LENGTH_LONG)
+                        .setAction(R.string.retry_loading) {
+                            val post =
+                                viewModel.data.value?.posts?.find {
+                                    it.id == state.errorReport.postIdError
+                                }
+                                    ?: throw RuntimeException("Post error")
+                            viewModel.saveRefresh(post)
+                        }
                         .show()
                 }
 
@@ -143,8 +172,12 @@ class FeedFragment : Fragment() {
             }
         }
 
-        errorMergeBinding.retryButton.setOnClickListener {
-            viewModel.loadPosts()
+
+
+
+        viewModel.data.observe(viewLifecycleOwner) { state ->
+            adapter.submitList(state.posts)
+            binding.emptyText.isVisible = state.empty
         }
 
         binding.fab.setOnClickListener {

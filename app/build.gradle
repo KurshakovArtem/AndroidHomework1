@@ -69,6 +69,7 @@ dependencies {
     implementation libs.androidx.navigation.ui.ktx
     implementation libs.room.runtime
     ksp libs.androidx.room.compiler
+    implementation libs.androidx.room.ktx
     implementation(platform(libs.firebase))
     implementation(libs.firebase.messaging)
     implementation(libs.play.services)

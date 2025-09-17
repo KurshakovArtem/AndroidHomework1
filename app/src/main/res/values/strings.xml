@@ -31,4 +31,5 @@
     <string name="save_error">Failed to save post</string>
     <string name="like_error">Like Add Error</string>
     <string name="dislike_error">Dislike Add Error</string>
+    <string name="save_refresh">Refresh</string>
 </resources>

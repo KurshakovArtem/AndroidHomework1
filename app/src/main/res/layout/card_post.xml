@@ -110,6 +110,19 @@
         app:layout_constraintTop_toTopOf="@id/like_button"
         tools:text="1111" />
 
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/save_refresh"
+        android:layout_height="@dimen/button_area"
+        android:layout_width="@dimen/long_button_area"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/under_video_barrier"
+        app:icon="@drawable/is_save_refresh_24"
+        android:contentDescription="@string/save_refresh"
+        android:visibility="gone"
+        app:iconGravity="textStart"
+        app:iconTint="#FF0000"
+        />
+
 
     <ImageView
         android:id="@+id/ic_post_views"
