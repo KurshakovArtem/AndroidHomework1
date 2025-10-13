@@ -180,6 +180,10 @@ class FeedFragment : Fragment() {
             binding.emptyText.isVisible = state.empty
         }
 
+        viewModel.newerCount.observe(viewLifecycleOwner){
+            println(it)
+        }
+
         binding.fab.setOnClickListener {
             findNavController().navigate(R.id.action_feedFragment_to_newPostFragment)
         }

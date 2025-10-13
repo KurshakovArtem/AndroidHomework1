@@ -4,10 +4,12 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.asFlow
 import androidx.lifecycle.asLiveData
+import androidx.lifecycle.switchMap
 import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import ru.netology.nmedia.db.AppDb
 import ru.netology.nmedia.dto.Post
@@ -34,10 +36,16 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
         AppDb.getInstance(application).postDao
     )
 
-    //val data: LiveData<FeedModel> = repository.data.map(::FeedModel)
-    val data: LiveData<FeedModel> =
-        repository.data.asFlow().combine(repository.isEmpty().asFlow(), ::FeedModel)
-            .asLiveData()
+
+    val data: LiveData<FeedModel> = repository.data
+        .map(::FeedModel)
+        .catch { it.printStackTrace() }  // реализовать обработку ошибок(snackbar)
+        .asLiveData(Dispatchers.Default)
+    val newerCount: LiveData<Int> = data.switchMap {
+        repository.getNewerCount(it.posts.firstOrNull { post -> post.id > 0 }?.id ?: 0L)
+            .catch { e -> e.printStackTrace() } // Не сообщаем пользователю об ошибке в фоне
+            .asLiveData(Dispatchers.Default)
+    }
     private val _dataState = MutableLiveData<FeedModelState>()
     val dataState: LiveData<FeedModelState>
         get() = _dataState
@@ -111,7 +119,7 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             try {
                 val refreshingPost = repository.retrySaveAsync(post)
-                if (refreshingPost.syncServerState){
+                if (refreshingPost.syncServerState) {
                     _dataState.value = FeedModelState(errorReport = null)
                 } else {
                     _dataState.value = FeedModelState(
@@ -121,7 +129,7 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
                         )
                     )
                 }
-            } catch (_: RuntimeException){
+            } catch (_: RuntimeException) {
                 _dataState.value = FeedModelState(
                     errorReport = ErrorReport(
                         post.id,

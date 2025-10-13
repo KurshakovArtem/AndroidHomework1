@@ -1,12 +1,17 @@
 package ru.netology.nmedia.repository
 
 
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.map
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import ru.netology.nmedia.api.PostApi
 import ru.netology.nmedia.dao.PostDao
@@ -14,17 +19,21 @@ import ru.netology.nmedia.dto.Post
 import ru.netology.nmedia.entity.PostEntity
 import ru.netology.nmedia.entity.toDto
 import ru.netology.nmedia.entity.toEntity
+import ru.netology.nmedia.error.AppError
 
 class PostRepositoryNetworkImpl(private val dao: PostDao) : PostRepository {
     private var draftContent = ""
 
-    override val data: LiveData<List<Post>> = dao.getAll().map(List<PostEntity>::toDto)
+    override val data = dao.getAll()
+        .map(List<PostEntity>::toDto)
+        .flowOn(Dispatchers.Default)
 
 
     override suspend fun getAllAsync() {
         withContext(Dispatchers.IO + SupervisorJob()) {
             try {
-                val syncServerTry = data.value.orEmpty().map { post ->
+                val flowPosts = data.firstOrNull().orEmpty()
+                val syncServerTry = flowPosts.map { post ->
                     async {
                         try {
                             if (!post.syncServerState) {
@@ -41,12 +50,12 @@ class PostRepositoryNetworkImpl(private val dao: PostDao) : PostRepository {
                     PostApi.service.getAll().map { post ->
                         // Не обновляем с сервера посты, которые отредактированны, но не синхронезированны с сервером
                         val postId = post.id
-                        if (data.value.orEmpty().find { it.id == postId }?.syncServerState
+                        if (flowPosts.find { it.id == postId }?.syncServerState
                                 ?: false
                         ) {
                             post.copy(syncServerState = true)
                         } else {
-                            data.value.orEmpty().find { it.id == postId } ?: post.copy(
+                            flowPosts.find { it.id == postId } ?: post.copy(
                                 syncServerState = true
                             )
                         }
@@ -62,9 +71,23 @@ class PostRepositoryNetworkImpl(private val dao: PostDao) : PostRepository {
         }
     }
 
+    override fun getNewerCount(id: Long): Flow<Int> = flow {
+        while (true) {
+            delay(10_000L)
+            val newerPosts = PostApi.service.getNewer(id).map {
+                it.copy(syncServerState = true)
+            }
+            dao.insert(newerPosts.toEntity())
+            emit(newerPosts.size)
+        }
+    }
+        .catch { e -> throw AppError.from(e)}
+        .flowOn(Dispatchers.Default)
+
     override suspend fun saveAsync(post: Post): Post {
-        val minimalId = if ((data.value?.minOfOrNull { it.id } ?: 0) >= 0) -1
-        else (data.value?.minOfOrNull { it.id } ?: 0) - 1
+        val flowPosts = data.firstOrNull().orEmpty()
+        val minimalId = if ((flowPosts.minOfOrNull { it.id } ?: 0) >= 0) -1
+        else (flowPosts.minOfOrNull { it.id } ?: 0) - 1
         // Если новый пост, то id отрицательный
         // Если редактируем пост, то id оригинального поста
         val notSyncId = if (post.id != 0L) post.id else minimalId
@@ -118,9 +141,8 @@ class PostRepositoryNetworkImpl(private val dao: PostDao) : PostRepository {
             dao.getPostById(id)?.toDto()?.likedByMe ?: throw RuntimeException("DB error")
         try {
             dao.likeById(id)
-            val postFromServer =
-                if (!isLiked) PostApi.service.likeById(id) else PostApi.service.dislikeById(id)
-            dao.insert(PostEntity.fromDto(postFromServer.copy(syncServerState = true)))
+            if (!isLiked) PostApi.service.likeById(id) else PostApi.service.dislikeById(id)
+            //dao.insert(PostEntity.fromDto(postFromServer.copy(syncServerState = true)))
         } catch (_: Exception) {
             dao.likeById(id)
             throw RuntimeException("Server error")
@@ -128,7 +150,7 @@ class PostRepositoryNetworkImpl(private val dao: PostDao) : PostRepository {
 
     }
 
-    override fun isEmpty() = dao.isEmpty()
+    //override fun isEmpty() = dao.isEmpty()
 
     override fun shareById(id: Long) {
         //сервер не принемает request на изменение счётчика share
