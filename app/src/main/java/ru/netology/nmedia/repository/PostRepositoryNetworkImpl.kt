@@ -8,6 +8,7 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
@@ -32,6 +33,7 @@ class PostRepositoryNetworkImpl(private val dao: PostDao) : PostRepository {
     override suspend fun getAllAsync() {
         withContext(Dispatchers.IO + SupervisorJob()) {
             try {
+                dao.setAllVisible()
                 val flowPosts = data.firstOrNull().orEmpty()
                 val syncServerTry = flowPosts.map { post ->
                     async {
@@ -53,10 +55,11 @@ class PostRepositoryNetworkImpl(private val dao: PostDao) : PostRepository {
                         if (flowPosts.find { it.id == postId }?.syncServerState
                                 ?: false
                         ) {
-                            post.copy(syncServerState = true)
+                            post.copy(syncServerState = true, isVisible = true)
                         } else {
                             flowPosts.find { it.id == postId } ?: post.copy(
-                                syncServerState = true
+                                syncServerState = true,
+                                isVisible = true
                             )
                         }
                     }
@@ -71,18 +74,23 @@ class PostRepositoryNetworkImpl(private val dao: PostDao) : PostRepository {
         }
     }
 
-    override fun getNewerCount(id: Long): Flow<Int> = flow {
+    override fun getNewerCount(): Flow<Int> = flow {
         while (true) {
             delay(10_000L)
-            val newerPosts = PostApi.service.getNewer(id).map {
-                it.copy(syncServerState = true)
+            val lastId = getLastId().first()
+            val newerPosts = PostApi.service.getNewer(lastId).map {
+                it.copy(syncServerState = true, isVisible = false)
             }
             dao.insert(newerPosts.toEntity())
-            emit(newerPosts.size)
+            emit(getInvisibleList().first())
         }
     }
-        .catch { e -> throw AppError.from(e)}
+        .catch { e -> throw AppError.from(e) }
         .flowOn(Dispatchers.Default)
+
+    override suspend fun updateNewerToOld() {
+        dao.setAllVisible()
+    }
 
     override suspend fun saveAsync(post: Post): Post {
         val flowPosts = data.firstOrNull().orEmpty()
@@ -92,10 +100,19 @@ class PostRepositoryNetworkImpl(private val dao: PostDao) : PostRepository {
         // Если редактируем пост, то id оригинального поста
         val notSyncId = if (post.id != 0L) post.id else minimalId
         //val post1 = post.copy(id = notSyncId, syncServerState = false)
-        dao.insert(PostEntity.fromDto(post.copy(id = notSyncId, syncServerState = false)))
+        dao.insert(
+            PostEntity.fromDto(
+                post.copy(
+                    id = notSyncId,
+                    syncServerState = false,
+                    isVisible = true
+                )
+            )
+        )
 
         try {
-            val postFromServer = PostApi.service.save(post).copy(syncServerState = true)
+            val postFromServer =
+                PostApi.service.save(post).copy(syncServerState = true, isVisible = true)
             dao.removeById(notSyncId)
             dao.insert(PostEntity.fromDto(postFromServer))
             return postFromServer
@@ -108,14 +125,22 @@ class PostRepositoryNetworkImpl(private val dao: PostDao) : PostRepository {
 
     override suspend fun retrySaveAsync(post: Post): Post {
         try {
+            dao.setAllVisible()
             val postFromServer = if (post.id < 0) {
                 PostApi.service.save(post.copy(id = 0))
             } else {
                 PostApi.service.save(post)
             }
             dao.removeById(post.id)
-            dao.insert(PostEntity.fromDto(postFromServer.copy(syncServerState = true)))
-            return postFromServer.copy(syncServerState = true)
+            dao.insert(
+                PostEntity.fromDto(
+                    postFromServer.copy(
+                        syncServerState = true,
+                        isVisible = true
+                    )
+                )
+            )
+            return postFromServer.copy(syncServerState = true, isVisible = true)
         } catch (_: Exception) {
             throw RuntimeException("Server error")
         }
@@ -142,15 +167,25 @@ class PostRepositoryNetworkImpl(private val dao: PostDao) : PostRepository {
         try {
             dao.likeById(id)
             if (!isLiked) PostApi.service.likeById(id) else PostApi.service.dislikeById(id)
-            //dao.insert(PostEntity.fromDto(postFromServer.copy(syncServerState = true)))
         } catch (_: Exception) {
             dao.likeById(id)
             throw RuntimeException("Server error")
         }
 
     }
+    private fun getLastId(): Flow<Long> =
+        dao.getAllInvisibleAndVisible()
+            .map(List<PostEntity>::toDto)
+            .map { posts ->
+                posts.firstOrNull { it.id > 0 }?.id ?: 0L
+            }
 
-    //override fun isEmpty() = dao.isEmpty()
+    private fun getInvisibleList(): Flow<Int> =
+        dao.getAllInvisibleAndVisible()
+            .map(List<PostEntity>::toDto)
+            .map{ posts ->
+                posts.filter { !it.isVisible }.size
+            }
 
     override fun shareById(id: Long) {
         //сервер не принемает request на изменение счётчика share

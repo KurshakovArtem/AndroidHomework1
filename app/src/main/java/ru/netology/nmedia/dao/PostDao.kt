@@ -13,6 +13,7 @@ interface PostDao {
     @Query(
         """
     SELECT * FROM PostEntity 
+    WHERE isVisible = 1    
     ORDER BY 
         CASE 
             WHEN id <= 0 THEN 0   
@@ -22,6 +23,22 @@ interface PostDao {
 """
     )
     fun getAll(): Flow<List<PostEntity>>
+
+    @Query(
+        """
+    SELECT * FROM PostEntity
+    ORDER BY 
+        CASE 
+            WHEN id <= 0 THEN 0   
+            ELSE 1               
+        END,
+        id DESC
+"""
+    )
+    fun getAllInvisibleAndVisible(): Flow<List<PostEntity>>
+
+    @Query("UPDATE PostEntity SET isVisible = 1")
+    suspend fun setAllVisible()
 
     @Query("SELECT COUNT(*) FROM PostEntity")
     suspend fun count(): Int

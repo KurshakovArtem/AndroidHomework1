@@ -42,7 +42,7 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
         .catch { it.printStackTrace() }  // реализовать обработку ошибок(snackbar)
         .asLiveData(Dispatchers.Default)
     val newerCount: LiveData<Int> = data.switchMap {
-        repository.getNewerCount(it.posts.firstOrNull { post -> post.id > 0 }?.id ?: 0L)
+        repository.getNewerCount()
             .catch { e -> e.printStackTrace() } // Не сообщаем пользователю об ошибке в фоне
             .asLiveData(Dispatchers.Default)
     }
@@ -82,6 +82,15 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun updateNewerToOld() {
+        viewModelScope.launch {
+            try {
+            repository.updateNewerToOld()
+            } catch (_: Exception) {
+                println("ошибка БД")
+            }
+        }
+    }
     fun save(content: String) {
         edited.value?.let { editPost ->
             val text = content.trim()       //отсекает все пробелы в начале и конце

@@ -23,6 +23,7 @@ data class PostEntity(
     val attachmentUrl: String = "",
     val attachmentDescription: String = "",
     val attachmentType: String = "EMPTY",
+    val isVisible: Boolean = true
 ) {
     fun toDto() = Post(
         id = id,
@@ -39,7 +40,8 @@ data class PostEntity(
             url = attachmentUrl,
             description = attachmentDescription,
             type = attachmentType.toAttachmentType()
-        )
+        ),
+        isVisible = isVisible
     )
 
     companion object {
@@ -58,6 +60,7 @@ data class PostEntity(
             attachmentUrl = if (dto.attachment != null) dto.attachment.url else "",
             attachmentDescription = if (dto.attachment != null) dto.attachment.description else "",
             attachmentType = if (dto.attachment != null) dto.attachment.type.toString() else "EMPTY",
+            isVisible = dto.isVisible
         )
     }
 }
