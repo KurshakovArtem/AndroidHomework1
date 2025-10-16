@@ -1,17 +1,19 @@
 package ru.netology.nmedia.repository
 
-import androidx.lifecycle.LiveData
+import kotlinx.coroutines.flow.Flow
 import ru.netology.nmedia.dto.Post
 
 interface PostRepository {
-    val data: LiveData<List<Post>>
+    val data: Flow<List<Post>>
     fun shareById(id: Long)
     fun getDraft(): String
     fun setDraft(content: String)
     suspend fun getAllAsync()
+    fun getNewerCount(): Flow<Int>
+    suspend fun updateNewerToOld()
     suspend fun removeBiIdAsync(id: Long)
     suspend fun saveAsync(post: Post): Post
     suspend fun retrySaveAsync(post: Post): Post
     suspend fun likeByIdAsync(id: Long)
-    fun isEmpty(): LiveData<Boolean>
+
 }

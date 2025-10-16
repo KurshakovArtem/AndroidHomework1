@@ -100,6 +100,7 @@ class FeedFragment : Fragment() {
 
         binding.swiperefresh.setOnRefreshListener {
             viewModel.refresh()
+            binding.newerBanner.visibility = View.GONE
         }
 
         viewModel.dataState.observe(viewLifecycleOwner) { state ->
@@ -178,6 +179,33 @@ class FeedFragment : Fragment() {
         viewModel.data.observe(viewLifecycleOwner) { state ->
             adapter.submitList(state.posts)
             binding.emptyText.isVisible = state.empty
+        }
+
+        viewModel.newerCount.observe(viewLifecycleOwner) { count ->
+            println(count)
+            if (count == 0) {
+                binding.newerBanner.visibility = View.GONE
+            } else {
+                binding.newerBanner.visibility = View.VISIBLE
+                binding.newerCount.text = count.toString()
+            }
+        }
+
+        binding.newerBanner.setOnClickListener {
+            viewModel.updateNewerToOld()
+            binding.newerBanner.animate()
+                .alpha(0f)
+                .setDuration(200)
+                .withEndAction {
+                    binding.newerBanner.visibility = View.GONE
+                    binding.newerBanner.alpha = 1f
+                }
+                .start()
+
+            // задержка скрола
+            binding.list.post {
+                binding.list.smoothScrollToPosition(0)
+            }
         }
 
         binding.fab.setOnClickListener {

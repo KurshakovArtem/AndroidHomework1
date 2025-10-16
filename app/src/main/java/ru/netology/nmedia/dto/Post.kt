@@ -12,4 +12,5 @@ data class Post(
     val postViews: Int = 0,
     val syncServerState: Boolean = true,
     val attachment: Attachment? = null,
+    val isVisible: Boolean = true
 )

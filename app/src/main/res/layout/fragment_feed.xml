@@ -1,10 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.coordinatorlayout.widget.CoordinatorLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:layout_height="match_parent"
-    android:layout_width="match_parent">
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/main"
@@ -12,10 +11,55 @@
         android:layout_height="match_parent"
         tools:context=".fragment.FeedFragment">
 
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/newer_banner"
+            android:layout_width="match_parent"
+            android:layout_height="100dp"
+            android:layout_margin="8dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:orientation="vertical"
+            android:visibility="gone"
+            app:cardBackgroundColor="#3D97A2"
+            app:cardCornerRadius="8dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:strokeColor="#283895"
+            app:strokeWidth="2dp"
+            tools:visibility="invisible">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_horizontal"
+                    android:text="@string/unread_posts"
+                    android:textColor="#9D4C33"
+                    android:textSize="20sp"
+                    android:layout_marginTop="25dp"/>
+
+                <TextView
+                    android:id="@+id/newer_count"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="#9D4C33"
+                    android:textSize="20sp"
+                    android:layout_gravity="center_horizontal"/>
+            </LinearLayout>
+
+        </com.google.android.material.card.MaterialCardView>
+
         <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
             android:id="@+id/swiperefresh"
             android:layout_width="match_parent"
-            android:layout_height="match_parent">
+            android:layout_height="0dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/newer_banner">
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/list"
@@ -55,9 +99,9 @@
         android:id="@+id/fab"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_gravity="end|bottom"
         android:layout_margin="@dimen/common_spacing"
         android:contentDescription="@string/add_post"
-        android:src="@drawable/ic_add_24"
-        android:layout_gravity="end|bottom" />
+        android:src="@drawable/ic_add_24" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

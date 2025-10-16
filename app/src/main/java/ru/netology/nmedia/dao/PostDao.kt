@@ -1,31 +1,53 @@
 package ru.netology.nmedia.dao
 
-import androidx.lifecycle.LiveData
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import kotlinx.coroutines.flow.Flow
 import ru.netology.nmedia.entity.PostEntity
 
 @Dao
 interface PostDao {
 
-    @Query("""
+    @Query(
+        """
     SELECT * FROM PostEntity 
+    WHERE isVisible = 1    
     ORDER BY 
         CASE 
             WHEN id <= 0 THEN 0   
             ELSE 1               
         END,
         id DESC
-""")
-    fun getAll(): LiveData<List<PostEntity>>
+"""
+    )
+    fun getAll(): Flow<List<PostEntity>>
+
+    @Query(
+        """
+    SELECT * FROM PostEntity
+    ORDER BY 
+        CASE 
+            WHEN id <= 0 THEN 0   
+            ELSE 1               
+        END,
+        id DESC
+"""
+    )
+    fun getAllInvisibleAndVisible(): Flow<List<PostEntity>>
+
+    @Query("UPDATE PostEntity SET isVisible = 1")
+    suspend fun setAllVisible()
+
+    @Query("SELECT COUNT(*) FROM PostEntity")
+    suspend fun count(): Int
 
     @Query("SELECT * FROM PostEntity WHERE id = :id LIMIT 1")
     suspend fun getPostById(id: Long): PostEntity?
 
-    @Query("SELECT COUNT(*) = 0 FROM PostEntity")
-    fun isEmpty(): LiveData<Boolean>
+    @Query("SELECT COUNT(*) == 0 FROM PostEntity")
+    suspend fun isEmpty(): Boolean
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(post: PostEntity)
@@ -52,11 +74,13 @@ interface PostDao {
     @Query("DELETE FROM PostEntity WHERE id = :id")
     suspend fun removeById(id: Long)
 
-    @Query("""
+    @Query(
+        """
         UPDATE PostEntity SET
                 share = share + 1
                 WHERE id = :id;
-    """)
+    """
+    )
     suspend fun sharedById(id: Long)
 
 }

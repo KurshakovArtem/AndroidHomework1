@@ -2,11 +2,11 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "54637328759a946f103a62d67afefc4a",
+    "identityHash": "939871fec5488f90ab3144bcb8540cd6",
     "entities": [
       {
         "tableName": "PostEntity",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `author` TEXT NOT NULL, `authorAvatar` TEXT NOT NULL, `content` TEXT NOT NULL, `published` TEXT NOT NULL, `likes` INTEGER NOT NULL, `likedByMe` INTEGER NOT NULL, `share` INTEGER NOT NULL, `postViews` INTEGER NOT NULL, `syncServerState` INTEGER NOT NULL, `attachment` INTEGER NOT NULL, `attachmentUrl` TEXT NOT NULL, `attachmentDescription` TEXT NOT NULL, `attachmentType` TEXT NOT NULL, PRIMARY KEY(`id`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `author` TEXT NOT NULL, `authorAvatar` TEXT NOT NULL, `content` TEXT NOT NULL, `published` TEXT NOT NULL, `likes` INTEGER NOT NULL, `likedByMe` INTEGER NOT NULL, `share` INTEGER NOT NULL, `postViews` INTEGER NOT NULL, `syncServerState` INTEGER NOT NULL, `attachment` INTEGER NOT NULL, `attachmentUrl` TEXT NOT NULL, `attachmentDescription` TEXT NOT NULL, `attachmentType` TEXT NOT NULL, `isVisible` INTEGER NOT NULL, PRIMARY KEY(`id`))",
         "fields": [
           {
             "fieldPath": "id",
@@ -91,6 +91,12 @@
             "columnName": "attachmentType",
             "affinity": "TEXT",
             "notNull": true
+          },
+          {
+            "fieldPath": "isVisible",
+            "columnName": "isVisible",
+            "affinity": "INTEGER",
+            "notNull": true
           }
         ],
         "primaryKey": {
@@ -103,7 +109,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '54637328759a946f103a62d67afefc4a')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '939871fec5488f90ab3144bcb8540cd6')"
     ]
   }
 }
