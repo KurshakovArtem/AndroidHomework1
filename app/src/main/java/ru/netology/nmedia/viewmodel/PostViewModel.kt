@@ -1,6 +1,7 @@
 package ru.netology.nmedia.viewmodel
 
 import android.app.Application
+import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -17,9 +18,11 @@ import ru.netology.nmedia.model.ErrorReport
 import ru.netology.nmedia.model.FeedErrorMassage
 import ru.netology.nmedia.model.FeedModel
 import ru.netology.nmedia.model.FeedModelState
+import ru.netology.nmedia.model.PhotoModel
 import ru.netology.nmedia.repository.PostRepository
 import ru.netology.nmedia.repository.PostRepositoryNetworkImpl
 import ru.netology.nmedia.supportingFunctions.SingleLiveEvent
+import java.io.File
 
 
 private val empty = Post(
@@ -53,9 +56,16 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
     private val _postCreated = SingleLiveEvent<Unit>()
     val postCreated: LiveData<Unit>
         get() = _postCreated
+    private val _photo = MutableLiveData<PhotoModel?>()
+    val photo: LiveData<PhotoModel?>
+        get() = _photo
 
     init {
         loadPosts()
+    }
+
+    fun updatePhoto(uri: Uri, file: File) {
+        _photo.value = PhotoModel(uri, file)
     }
 
     fun loadPosts() {
@@ -85,12 +95,13 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
     fun updateNewerToOld() {
         viewModelScope.launch {
             try {
-            repository.updateNewerToOld()
+                repository.updateNewerToOld()
             } catch (_: Exception) {
                 println("ошибка БД")
             }
         }
     }
+
     fun save(content: String) {
         edited.value?.let { editPost ->
             val text = content.trim()       //отсекает все пробелы в начале и конце
@@ -98,7 +109,11 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
             if (text != editPost.content) {
                 viewModelScope.launch {
                     try {
-                        val savedPost = repository.saveAsync(editPost.copy(content = content))
+
+                        val savedPost = repository.saveAsync(
+                            editPost.copy(content = content),
+                            _photo.value?.file
+                        )
                         if (savedPost.syncServerState) {
                             _dataState.value = FeedModelState(errorReport = null)
                         } else {
@@ -122,6 +137,7 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
         }
         if (edited.value?.id == 0L) repository.setDraft("")  // очищаем черновик
         edited.value = empty
+        _photo.value = null
     }
 
     fun saveRefresh(post: Post) {
@@ -210,4 +226,8 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun getDraft() = repository.getDraft()
+
+    fun removePhoto() {
+        _photo.value = null
+    }
 }

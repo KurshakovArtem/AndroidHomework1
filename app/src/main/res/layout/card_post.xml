@@ -96,6 +96,7 @@
         app:iconTint="@color/like_checkbox_tint"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/under_video_barrier"
+        android:textSize="12sp"
         tools:checked="true"
         tools:text="1111" />
 
@@ -108,6 +109,7 @@
         app:layout_constraintBottom_toBottomOf="@id/like_button"
         app:layout_constraintStart_toEndOf="@id/like_button"
         app:layout_constraintTop_toTopOf="@id/like_button"
+        android:textSize="12sp"
         tools:text="1111" />
 
     <com.google.android.material.button.MaterialButton

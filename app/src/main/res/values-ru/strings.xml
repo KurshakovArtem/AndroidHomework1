@@ -34,4 +34,10 @@
     <string name="dislike_error">Ошибка удаления Like</string>
     <string name="save_refresh">Обновить</string>
     <string name="unread_posts">Есть непрочитанные сообщения:</string>
+    <string name="menu_save">меню сохранить</string>
+    <string name="description_select_photo">Выбрать фото</string>
+    <string name="description_take_photo">Взять фото</string>
+    <string name="description_photo">Фото</string>
+    <string name="description_remove_photo">Удалить фото</string>
+    <string name="image_error">Ошибка выбора изображения</string>
 </resources>

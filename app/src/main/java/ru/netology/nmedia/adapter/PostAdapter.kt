@@ -107,7 +107,7 @@ class PostViewHolder(
             when (post.attachment.type) {
                 AttachmentType.IMAGE -> {
                     attachmentText.text = post.attachment.description
-                    attachmentPost.loadAttachmentImage("http://10.0.2.2:9999/images/${post.attachment.url}")
+                    attachmentPost.loadAttachmentImage("http://10.0.2.2:9999/media/${post.attachment.url}")
                 }
 
                 AttachmentType.VIDEO -> {

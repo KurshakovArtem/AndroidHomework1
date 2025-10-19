@@ -27,7 +27,7 @@
             app:layout_constraintTop_toTopOf="parent"
             app:strokeColor="#283895"
             app:strokeWidth="2dp"
-            tools:visibility="invisible">
+            tools:visibility="visible">
 
             <LinearLayout
                 android:layout_width="match_parent"

@@ -58,7 +58,7 @@ data class PostEntity(
             attachment = dto.attachment != null,
             syncServerState = dto.syncServerState,
             attachmentUrl = if (dto.attachment != null) dto.attachment.url else "",
-            attachmentDescription = if (dto.attachment != null) dto.attachment.description else "",
+            attachmentDescription = if (dto.attachment != null) dto.attachment.description ?: "Отцуствует" else "",
             attachmentType = if (dto.attachment != null) dto.attachment.type.toString() else "EMPTY",
             isVisible = dto.isVisible
         )
