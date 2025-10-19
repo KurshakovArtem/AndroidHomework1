@@ -30,6 +30,7 @@ import java.io.File
 
 class PostRepositoryNetworkImpl(private val dao: PostDao) : PostRepository {
     private var draftContent = ""
+    private var photoMap = mutableMapOf<Long, File>()
 
     override val data = dao.getAll()
         .map(List<PostEntity>::toDto)
@@ -82,7 +83,7 @@ class PostRepositoryNetworkImpl(private val dao: PostDao) : PostRepository {
 
     override fun getNewerCount(): Flow<Int> = flow {
         while (true) {
-            delay(10_000L)
+            delay(180_000L)
             val lastId = getLastId().first()
             val newerPosts = PostApi.service.getNewer(lastId).map {
                 it.copy(syncServerState = true, isVisible = false)
@@ -105,7 +106,6 @@ class PostRepositoryNetworkImpl(private val dao: PostDao) : PostRepository {
         // Если новый пост, то id отрицательный
         // Если редактируем пост, то id оригинального поста
         val notSyncId = if (post.id != 0L) post.id else minimalId
-        //val post1 = post.copy(id = notSyncId, syncServerState = false)
         dao.insert(
             PostEntity.fromDto(
                 post.copy(
@@ -115,18 +115,22 @@ class PostRepositoryNetworkImpl(private val dao: PostDao) : PostRepository {
                 )
             )
         )
+        if (photo != null) {
+            photoMap[notSyncId] = photo
+        }
 
         try {
             val media = photo?.let {
                 upload(it)
             }
             val postWithAttachment = post.copy(attachment = media?.let {
-                Attachment(url = it.id, description = "Отцуствует", type = AttachmentType.IMAGE)
+                Attachment(url = it.id, description = "", type = AttachmentType.IMAGE)
             })
             val postFromServer =
                 PostApi.service.save(postWithAttachment)
                     .copy(syncServerState = true, isVisible = true)
             dao.removeById(notSyncId)
+            photoMap.remove(notSyncId)
             dao.insert(PostEntity.fromDto(postFromServer))
             return postFromServer
         } catch (_: Exception) {
@@ -139,12 +143,19 @@ class PostRepositoryNetworkImpl(private val dao: PostDao) : PostRepository {
     override suspend fun retrySaveAsync(post: Post): Post {
         try {
             dao.setAllVisible()
+            val media = photoMap[post.id]?.let {
+                upload(it)
+            }
+            val postWithAttachment = post.copy(attachment = media?.let {
+                Attachment(url = it.id, description = "", type = AttachmentType.IMAGE)
+            })
             val postFromServer = if (post.id < 0) {
-                PostApi.service.save(post.copy(id = 0))
+                PostApi.service.save(postWithAttachment.copy(id = 0))
             } else {
-                PostApi.service.save(post)
+                PostApi.service.save(postWithAttachment)
             }
             dao.removeById(post.id)
+            photoMap.remove(post.id)
             dao.insert(
                 PostEntity.fromDto(
                     postFromServer.copy(

@@ -24,6 +24,7 @@ interface OnInteractionListener {
     fun onVideo(post: Post) {}
     fun onMoveToSinglePost(post: Post) {}
     fun onSaveRefresh(post: Post) {}
+    fun onMoveToSinglePhoto(post: Post) {}
 }
 
 class PostAdapter(
@@ -108,6 +109,9 @@ class PostViewHolder(
                 AttachmentType.IMAGE -> {
                     attachmentText.text = post.attachment.description
                     attachmentPost.loadAttachmentImage("http://10.0.2.2:9999/media/${post.attachment.url}")
+                    attachmentPost.setOnClickListener {
+                        onInteractionListener.onMoveToSinglePhoto(post)
+                    }
                 }
 
                 AttachmentType.VIDEO -> {
