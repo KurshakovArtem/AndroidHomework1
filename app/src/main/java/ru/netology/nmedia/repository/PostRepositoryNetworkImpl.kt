@@ -14,16 +14,23 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.asRequestBody
 import ru.netology.nmedia.api.PostApi
 import ru.netology.nmedia.dao.PostDao
+import ru.netology.nmedia.dto.Attachment
+import ru.netology.nmedia.dto.AttachmentType
+import ru.netology.nmedia.dto.Media
 import ru.netology.nmedia.dto.Post
 import ru.netology.nmedia.entity.PostEntity
 import ru.netology.nmedia.entity.toDto
 import ru.netology.nmedia.entity.toEntity
 import ru.netology.nmedia.error.AppError
+import java.io.File
 
 class PostRepositoryNetworkImpl(private val dao: PostDao) : PostRepository {
     private var draftContent = ""
+    private var photoMap = mutableMapOf<Long, File>()
 
     override val data = dao.getAll()
         .map(List<PostEntity>::toDto)
@@ -76,7 +83,7 @@ class PostRepositoryNetworkImpl(private val dao: PostDao) : PostRepository {
 
     override fun getNewerCount(): Flow<Int> = flow {
         while (true) {
-            delay(10_000L)
+            delay(180_000L)
             val lastId = getLastId().first()
             val newerPosts = PostApi.service.getNewer(lastId).map {
                 it.copy(syncServerState = true, isVisible = false)
@@ -92,14 +99,13 @@ class PostRepositoryNetworkImpl(private val dao: PostDao) : PostRepository {
         dao.setAllVisible()
     }
 
-    override suspend fun saveAsync(post: Post): Post {
+    override suspend fun saveAsync(post: Post, photo: File?): Post {
         val flowPosts = data.firstOrNull().orEmpty()
         val minimalId = if ((flowPosts.minOfOrNull { it.id } ?: 0) >= 0) -1
         else (flowPosts.minOfOrNull { it.id } ?: 0) - 1
         // Если новый пост, то id отрицательный
         // Если редактируем пост, то id оригинального поста
         val notSyncId = if (post.id != 0L) post.id else minimalId
-        //val post1 = post.copy(id = notSyncId, syncServerState = false)
         dao.insert(
             PostEntity.fromDto(
                 post.copy(
@@ -109,11 +115,22 @@ class PostRepositoryNetworkImpl(private val dao: PostDao) : PostRepository {
                 )
             )
         )
+        if (photo != null) {
+            photoMap[notSyncId] = photo
+        }
 
         try {
+            val media = photo?.let {
+                upload(it)
+            }
+            val postWithAttachment = post.copy(attachment = media?.let {
+                Attachment(url = it.id, description = "", type = AttachmentType.IMAGE)
+            })
             val postFromServer =
-                PostApi.service.save(post).copy(syncServerState = true, isVisible = true)
+                PostApi.service.save(postWithAttachment)
+                    .copy(syncServerState = true, isVisible = true)
             dao.removeById(notSyncId)
+            photoMap.remove(notSyncId)
             dao.insert(PostEntity.fromDto(postFromServer))
             return postFromServer
         } catch (_: Exception) {
@@ -126,12 +143,19 @@ class PostRepositoryNetworkImpl(private val dao: PostDao) : PostRepository {
     override suspend fun retrySaveAsync(post: Post): Post {
         try {
             dao.setAllVisible()
+            val media = photoMap[post.id]?.let {
+                upload(it)
+            }
+            val postWithAttachment = post.copy(attachment = media?.let {
+                Attachment(url = it.id, description = "", type = AttachmentType.IMAGE)
+            })
             val postFromServer = if (post.id < 0) {
-                PostApi.service.save(post.copy(id = 0))
+                PostApi.service.save(postWithAttachment.copy(id = 0))
             } else {
-                PostApi.service.save(post)
+                PostApi.service.save(postWithAttachment)
             }
             dao.removeById(post.id)
+            photoMap.remove(post.id)
             dao.insert(
                 PostEntity.fromDto(
                     postFromServer.copy(
@@ -145,6 +169,16 @@ class PostRepositoryNetworkImpl(private val dao: PostDao) : PostRepository {
             throw RuntimeException("Server error")
         }
     }
+
+    private suspend fun upload(file: File): Media =
+        PostApi.service.upload(
+            MultipartBody.Part.createFormData(
+                "file",
+                file.name,
+                file.asRequestBody()
+            )
+        )
+
 
     override suspend fun removeBiIdAsync(id: Long) {
         val oldPost = dao.getPostById(id)?.toDto() ?: throw RuntimeException("DB error")
@@ -173,6 +207,7 @@ class PostRepositoryNetworkImpl(private val dao: PostDao) : PostRepository {
         }
 
     }
+
     private fun getLastId(): Flow<Long> =
         dao.getAllInvisibleAndVisible()
             .map(List<PostEntity>::toDto)
@@ -183,7 +218,7 @@ class PostRepositoryNetworkImpl(private val dao: PostDao) : PostRepository {
     private fun getInvisibleList(): Flow<Int> =
         dao.getAllInvisibleAndVisible()
             .map(List<PostEntity>::toDto)
-            .map{ posts ->
+            .map { posts ->
                 posts.filter { !it.isVisible }.size
             }
 

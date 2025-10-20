@@ -33,4 +33,10 @@
     <string name="dislike_error">Dislike Add Error</string>
     <string name="save_refresh">Refresh</string>
     <string name="unread_posts">There are unread messages:</string>
+    <string name="menu_save">menu save</string>
+    <string name="description_select_photo">Select photo</string>
+    <string name="description_take_photo">Take photo</string>
+    <string name="description_photo">Photo</string>
+    <string name="description_remove_photo">Remove photo</string>
+    <string name="image_error">Image pick error</string>
 </resources>

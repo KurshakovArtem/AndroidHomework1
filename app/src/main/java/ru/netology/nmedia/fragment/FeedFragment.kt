@@ -93,6 +93,15 @@ class FeedFragment : Fragment() {
                         }
                     )
                 }
+
+                override fun onMoveToSinglePhoto(post: Post) {
+                    findNavController().navigate(
+                        R.id.action_feedFragment_to_singlePhotoFragment,
+                        Bundle().apply {
+                            textArg = post.id.toString()
+                        }
+                    )
+                }
             }
         )
 

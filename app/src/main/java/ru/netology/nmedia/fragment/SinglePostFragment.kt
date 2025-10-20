@@ -83,6 +83,15 @@ class SinglePostFragment : Fragment() {
                     }
                 )
             }
+
+            override fun onMoveToSinglePhoto(post: Post) {
+                findNavController().navigate(
+                    R.id.action_singlePostFragment_to_singlePhotoFragment,
+                    Bundle().apply {
+                        textArg = post.id.toString()
+                    }
+                )
+            }
         }
         val postViewHolder = PostViewHolder(binding.singlePost, interactionListener)
 
