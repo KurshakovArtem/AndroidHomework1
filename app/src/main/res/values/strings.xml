@@ -39,4 +39,7 @@
     <string name="description_photo">Photo</string>
     <string name="description_remove_photo">Remove photo</string>
     <string name="image_error">Image pick error</string>
+    <string name="menu_logout">Logout</string>
+    <string name="menu_sing_in">SingIn</string>
+    <string name="menu_sing_up">SingUp</string>
 </resources>

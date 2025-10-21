@@ -14,6 +14,7 @@ import retrofit2.http.POST
 import retrofit2.http.Part
 import retrofit2.http.Path
 import ru.netology.nmedia.BuildConfig
+import ru.netology.nmedia.auth.AppAuth
 import ru.netology.nmedia.dto.Media
 import ru.netology.nmedia.dto.Post
 import java.util.concurrent.TimeUnit
@@ -22,6 +23,15 @@ private const val BASE_URL = "${BuildConfig.BASE_URL}/api/slow/"
 
 private val client = OkHttpClient.Builder()
     .connectTimeout(30, TimeUnit.SECONDS)
+    .addInterceptor { chain ->
+        AppAuth.getInstance().authStateFlow.value.token?.let { token ->
+            val newRequest = chain.request().newBuilder()
+                .addHeader("Authorization", token)
+                .build()
+            return@addInterceptor chain.proceed(newRequest)
+        }
+        chain.proceed(chain.request())
+    }
     .apply {
         if (BuildConfig.DEBUG) {
             addInterceptor(HttpLoggingInterceptor().apply {

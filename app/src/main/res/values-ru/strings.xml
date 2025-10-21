@@ -40,4 +40,7 @@
     <string name="description_photo">Фото</string>
     <string name="description_remove_photo">Удалить фото</string>
     <string name="image_error">Ошибка выбора изображения</string>
+    <string name="menu_logout">Выйти</string>
+    <string name="menu_sing_in">Войти</string>
+    <string name="menu_sing_up">Регистрация</string>
 </resources>
