@@ -40,6 +40,15 @@
     <string name="description_remove_photo">Remove photo</string>
     <string name="image_error">Image pick error</string>
     <string name="menu_logout">Logout</string>
-    <string name="menu_sing_in">SingIn</string>
-    <string name="menu_sing_up">SingUp</string>
+    <string name="menu_sign_in">SignIn</string>
+    <string name="menu_sign_up">SignUp</string>
+    <string name="enter_text">Enter your login and password</string>
+    <string name="login">Login</string>
+    <string name="password">Password</string>
+    <string name="person_icon_description">Person icon</string>
+    <string name="user_name">User name</string>
+    <string name="username_field">Username field</string>
+    <string name="password_icon_description">Password Icon</string>
+    <string name="sign_in">SignIn</string>
+    <string name="error_auth">Incorrect login or password</string>
 </resources>

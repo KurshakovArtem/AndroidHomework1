@@ -18,6 +18,9 @@
         <action
             android:id="@+id/action_feedFragment_to_singlePhotoFragment"
             app:destination="@id/singlePhotoFragment" />
+        <action
+            android:id="@+id/action_feedFragment_to_signInFragment"
+            app:destination="@id/signInFragment" />
     </fragment>
     <fragment
         android:id="@+id/newPostFragment"
@@ -35,9 +38,20 @@
         <action
             android:id="@+id/action_singlePostFragment_to_singlePhotoFragment"
             app:destination="@id/singlePhotoFragment" />
+        <action
+            android:id="@+id/action_singlePostFragment_to_signInFragment"
+            app:destination="@id/signInFragment" />
     </fragment>
     <fragment
         android:id="@+id/singlePhotoFragment"
         android:name="ru.netology.nmedia.fragment.SinglePhotoFragment"
         android:label="SinglePhotoFragment" />
+    <fragment
+        android:id="@+id/signInFragment"
+        android:name="ru.netology.nmedia.fragment.SignInFragment"
+        android:label="SignInFragment" >
+        <action
+            android:id="@+id/action_signInFragment_to_feedFragment"
+            app:destination="@id/feedFragment" />
+    </fragment>
 </navigation>

@@ -4,6 +4,7 @@ import android.content.Context
 import kotlinx.coroutines.flow.*
 import ru.netology.nmedia.dto.AuthState
 import androidx.core.content.edit
+import ru.netology.nmedia.api.PostApi
 
 class AppAuth private constructor(context: Context) {
     companion object {
@@ -24,6 +25,16 @@ class AppAuth private constructor(context: Context) {
         }
 
         private fun buildAuth(context: Context): AppAuth = AppAuth(context)
+
+        suspend fun sendLoginPassword(username: String, password: String) {
+            try {
+                val authState = PostApi.service.updateUser(username, password)
+                instance?.setAuth(authState.id, authState.token)
+            } catch (_: Exception) {
+                instance?.setAuth(0L, null)
+                throw RuntimeException("Ошибка авторизации")
+            }
+        }
     }
 
     private val prefs =
@@ -44,7 +55,7 @@ class AppAuth private constructor(context: Context) {
     val authStateFlow: StateFlow<AuthState> = _authStateFlow.asStateFlow()
 
     @Synchronized
-    fun setAuth(id: Long, token: String) {
+    fun setAuth(id: Long, token: String?) {
         _authStateFlow.value = AuthState(id, token)
         prefs.edit {
             putLong(ID_KEY, id)

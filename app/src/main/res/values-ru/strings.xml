@@ -41,6 +41,15 @@
     <string name="description_remove_photo">Удалить фото</string>
     <string name="image_error">Ошибка выбора изображения</string>
     <string name="menu_logout">Выйти</string>
-    <string name="menu_sing_in">Войти</string>
-    <string name="menu_sing_up">Регистрация</string>
+    <string name="menu_sign_in">Войти</string>
+    <string name="menu_sign_up">Регистрация</string>
+    <string name="enter_text">Введите логин и пароль</string>
+    <string name="login">Логин</string>
+    <string name="password">Пароль</string>
+    <string name="person_icon_description">Иконка человека</string>
+    <string name="user_name">Имя пользователя</string>
+    <string name="username_field">Поле имени пользователя</string>
+    <string name="password_icon_description">Иконка пароля</string>
+    <string name="sign_in">Войти</string>
+    <string name="error_auth">Неверный логин или пароль</string>
 </resources>

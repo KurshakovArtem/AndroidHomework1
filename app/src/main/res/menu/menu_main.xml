@@ -11,13 +11,13 @@
 
     <group android:id="@+id/unauthenticated">
         <item
-            android:id="@+id/singIn"
-            android:title="@string/menu_sing_in"
+            android:id="@+id/signIn"
+            android:title="@string/menu_sign_in"
             app:showAsAction="never" />
 
         <item
-            android:id="@+id/singUp"
-            android:title="@string/menu_sing_up"
+            android:id="@+id/signUp"
+            android:title="@string/menu_sign_up"
             app:showAsAction="never" />
 
     </group>
