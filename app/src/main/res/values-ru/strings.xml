@@ -52,4 +52,9 @@
     <string name="password_icon_description">Иконка пароля</string>
     <string name="sign_in">Войти</string>
     <string name="error_auth">Неверный логин или пароль</string>
+    <string name="must_login">Необходимо войти</string>
+    <string name="need_auth">Требуется авторизация</string>
+    <string name="cancel">Отмена</string>
+    <string name="sign_out">Выйти</string>
+    <string name="are_you_sure">Вы точно хотите выйти?</string>
 </resources>

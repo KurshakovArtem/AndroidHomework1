@@ -51,4 +51,10 @@
     <string name="password_icon_description">Password Icon</string>
     <string name="sign_in">SignIn</string>
     <string name="error_auth">Incorrect login or password</string>
+    <string name="must_login">You must login</string>
+    <string name="need_auth">Authorization required</string>
+    <string name="cancel">Cancel</string>
+    <string name="sign_out">Sign Out</string>
+    <string name="are_you_sure">Are you sure you want to go out?</string>
+
 </resources>

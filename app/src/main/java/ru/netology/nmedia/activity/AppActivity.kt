@@ -23,6 +23,10 @@ import androidx.activity.viewModels
 import androidx.core.view.MenuProvider
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.navigation.Navigation
+import androidx.navigation.fragment.NavHostFragment
+import androidx.navigation.fragment.findNavController
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import ru.netology.nmedia.auth.AppAuth
 import ru.netology.nmedia.viewmodel.AuthViewModel
 
@@ -99,7 +103,13 @@ class AppActivity : AppCompatActivity() {
                         }
 
                         R.id.logout -> {
-                            AppAuth.getInstance().removeAuth()
+                            val currentFragment =
+                                this@AppActivity.findNavController(R.id.nav_host_fragment).currentDestination?.id
+                            if (currentFragment == R.id.newPostFragment) {
+                                showLogoutDialog()
+                            } else {
+                                AppAuth.getInstance().removeAuth()
+                            }
                             true
                         }
 
@@ -141,6 +151,21 @@ class AppActivity : AppCompatActivity() {
         FirebaseMessaging.getInstance().token.addOnSuccessListener {
             println(it)
         }
+    }
+
+    private fun showLogoutDialog() {
+        MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.sign_out)
+            .setMessage(R.string.are_you_sure)
+            .setPositiveButton(R.string.menu_logout) { _, _ ->
+                AppAuth.getInstance().removeAuth()
+                findNavController(R.id.nav_host_fragment).navigateUp()
+            }
+            .setNegativeButton(R.string.cancel) { dialog, _ ->
+                dialog.cancel()
+            }
+            .setCancelable(true)
+            .show()
     }
 
 }
