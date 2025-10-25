@@ -4,7 +4,12 @@ import android.content.Context
 import kotlinx.coroutines.flow.*
 import ru.netology.nmedia.dto.AuthState
 import androidx.core.content.edit
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.asRequestBody
+import okhttp3.RequestBody.Companion.toRequestBody
 import ru.netology.nmedia.api.PostApi
+import java.io.File
 
 class AppAuth private constructor(context: Context) {
     companion object {
@@ -33,6 +38,40 @@ class AppAuth private constructor(context: Context) {
             } catch (_: Exception) {
                 instance?.setAuth(0L, null)
                 throw RuntimeException("Ошибка авторизации")
+            }
+        }
+
+        suspend fun sendRegistration(nickname: String, login: String, password: String) {
+            try {
+                val authState = PostApi.service.registerUser(login, password, nickname)
+                instance?.setAuth(authState.id, authState.token)
+            } catch (_: Exception) {
+                instance?.setAuth(0L, null)
+                throw RuntimeException("Ошибка регистрации")
+            }
+        }
+
+        suspend fun sendRegistrationWithPhoto(
+            nickname: String,
+            login: String,
+            password: String,
+            file: File
+        ) {
+            try {
+                val authState = PostApi.service.registerWithPhoto(
+                    login = login.toRequestBody("text/plain".toMediaType()),
+                    pass = password.toRequestBody("text/plain".toMediaType()),
+                    name = nickname.toRequestBody("text/plain".toMediaType()),
+                    media = MultipartBody.Part.createFormData(
+                        "file",
+                        file.name,
+                        file.asRequestBody()
+                    )
+                )
+                instance?.setAuth(authState.id, authState.token)
+            }catch (_: Exception) {
+                instance?.setAuth(0L, null)
+                throw RuntimeException("Ошибка регистрации")
             }
         }
     }

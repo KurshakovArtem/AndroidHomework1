@@ -56,5 +56,12 @@
     <string name="cancel">Cancel</string>
     <string name="sign_out">Sign Out</string>
     <string name="are_you_sure">Are you sure you want to go out?</string>
+    <string name="registration">Registration</string>
+    <string name="description_avatar">Avatar</string>
+    <string name="description_add_avatar">Add Avatar</string>
+    <string name="nickname">Nickname</string>
+    <string name="confirm_password">Confirm Password</string>
+    <string name="error_registration">Registration error</string>
+    <string name="remove_avatar">Remove avatar</string>
 
 </resources>

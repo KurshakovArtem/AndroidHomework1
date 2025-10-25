@@ -57,4 +57,11 @@
     <string name="cancel">Отмена</string>
     <string name="sign_out">Выйти</string>
     <string name="are_you_sure">Вы точно хотите выйти?</string>
+    <string name="registration">Регистрация</string>
+    <string name="description_avatar">Аватарка</string>
+    <string name="description_add_avatar">Добавить Аватарку</string>
+    <string name="nickname">Имя пользователя</string>
+    <string name="confirm_password">Подтвердить пароль</string>
+    <string name="error_registration">Ошибка регистрации</string>
+    <string name="remove_avatar">Удалить аватарку</string>
 </resources>
