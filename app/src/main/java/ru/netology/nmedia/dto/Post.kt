@@ -2,6 +2,7 @@ package ru.netology.nmedia.dto
 
 data class Post(
     val id: Long,
+    val authorId: Long,
     val author: String,
     val authorAvatar: String = "",
     val content: String,
@@ -12,5 +13,6 @@ data class Post(
     val postViews: Int = 0,
     val syncServerState: Boolean = true,
     val attachment: Attachment? = null,
-    val isVisible: Boolean = true
+    val isVisible: Boolean = true,
+    val ownedByMe: Boolean = false
 )

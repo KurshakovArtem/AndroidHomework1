@@ -18,12 +18,22 @@
         <action
             android:id="@+id/action_feedFragment_to_singlePhotoFragment"
             app:destination="@id/singlePhotoFragment" />
+        <action
+            android:id="@+id/action_feedFragment_to_signInFragment"
+            app:destination="@id/signInFragment" />
+        <action
+            android:id="@+id/action_feedFragment_to_signUpFragment"
+            app:destination="@id/signUpFragment" />
     </fragment>
     <fragment
         android:id="@+id/newPostFragment"
         android:name="ru.netology.nmedia.fragment.NewPostFragment"
         android:label="fragment_new_post"
-        tools:layout="@layout/fragment_new_post" />
+        tools:layout="@layout/fragment_new_post" >
+        <action
+            android:id="@+id/action_newPostFragment_to_signInFragment"
+            app:destination="@id/signInFragment" />
+    </fragment>
     <fragment
         android:id="@+id/singlePostFragment"
         android:name="ru.netology.nmedia.fragment.SinglePostFragment"
@@ -35,9 +45,27 @@
         <action
             android:id="@+id/action_singlePostFragment_to_singlePhotoFragment"
             app:destination="@id/singlePhotoFragment" />
+        <action
+            android:id="@+id/action_singlePostFragment_to_signInFragment"
+            app:destination="@id/signInFragment" />
+        <action
+            android:id="@+id/action_singlePostFragment_to_signUpFragment"
+            app:destination="@id/signUpFragment" />
     </fragment>
     <fragment
         android:id="@+id/singlePhotoFragment"
         android:name="ru.netology.nmedia.fragment.SinglePhotoFragment"
         android:label="SinglePhotoFragment" />
+    <fragment
+        android:id="@+id/signInFragment"
+        android:name="ru.netology.nmedia.fragment.SignInFragment"
+        android:label="SignInFragment" >
+        <action
+            android:id="@+id/action_signInFragment_to_feedFragment"
+            app:destination="@id/feedFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/signUpFragment"
+        android:name="ru.netology.nmedia.fragment.SignUpFragment"
+        android:label="SignUpFragment" />
 </navigation>

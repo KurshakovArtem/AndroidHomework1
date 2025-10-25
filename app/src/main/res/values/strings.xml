@@ -39,4 +39,29 @@
     <string name="description_photo">Photo</string>
     <string name="description_remove_photo">Remove photo</string>
     <string name="image_error">Image pick error</string>
+    <string name="menu_logout">Logout</string>
+    <string name="menu_sign_in">SignIn</string>
+    <string name="menu_sign_up">SignUp</string>
+    <string name="enter_text">Enter your login and password</string>
+    <string name="login">Login</string>
+    <string name="password">Password</string>
+    <string name="person_icon_description">Person icon</string>
+    <string name="user_name">User name</string>
+    <string name="username_field">Username field</string>
+    <string name="password_icon_description">Password Icon</string>
+    <string name="sign_in">SignIn</string>
+    <string name="error_auth">Incorrect login or password</string>
+    <string name="must_login">You must login</string>
+    <string name="need_auth">Authorization required</string>
+    <string name="cancel">Cancel</string>
+    <string name="sign_out">Sign Out</string>
+    <string name="are_you_sure">Are you sure you want to go out?</string>
+    <string name="registration">Registration</string>
+    <string name="description_avatar">Avatar</string>
+    <string name="description_add_avatar">Add Avatar</string>
+    <string name="nickname">Nickname</string>
+    <string name="confirm_password">Confirm Password</string>
+    <string name="error_registration">Registration error</string>
+    <string name="remove_avatar">Remove avatar</string>
+
 </resources>

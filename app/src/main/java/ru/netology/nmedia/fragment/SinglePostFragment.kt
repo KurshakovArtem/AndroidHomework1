@@ -9,10 +9,12 @@ import androidx.core.net.toUri
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import ru.netology.nmedia.R
 import ru.netology.nmedia.adapter.OnInteractionListener
 import ru.netology.nmedia.adapter.PostViewHolder
+import ru.netology.nmedia.auth.AppAuth
 import ru.netology.nmedia.databinding.FragmentSinglePostBinding
 import ru.netology.nmedia.dto.Post
 import ru.netology.nmedia.fragment.NewPostFragment.Companion.textArg
@@ -38,7 +40,11 @@ class SinglePostFragment : Fragment() {
 
         val interactionListener = object : OnInteractionListener {
             override fun onLike(post: Post) {
-                viewModel.likeById(post.id)
+                if (AppAuth.getInstance().authStateFlow.value.id != 0L) {
+                    viewModel.likeById(post.id)
+                } else {
+                    showLoginDialog()
+                }
             }
 
             override fun onSaveRefresh(post: Post) {
@@ -164,4 +170,19 @@ class SinglePostFragment : Fragment() {
         }
         return binding.root
     }
+
+    private fun showLoginDialog() {
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(R.string.need_auth)
+            .setMessage(R.string.must_login)
+            .setPositiveButton(R.string.sign_in) { _, _ ->
+                findNavController().navigate(R.id.action_singlePostFragment_to_signInFragment)
+            }
+            .setNegativeButton(R.string.cancel) { dialog, _ ->
+                dialog.cancel()
+            }
+            .setCancelable(true)
+            .show()
+    }
+
 }

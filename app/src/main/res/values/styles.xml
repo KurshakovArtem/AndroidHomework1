@@ -2,7 +2,7 @@
 <resources>
 
     <style name="Style.CountButton" parent="Widget.Material3.Button.TextButton.Icon">
-        <item name="iconTint">?attr/colorControlNormal</item>
+        <item name="iconTint">@android:color/holo_green_light</item>
         <item name="android:textColor">?attr/colorControlNormal</item>
         <item name="android:layout_width">@dimen/long_button_area</item>
         <item name="android:layout_height">@dimen/button_area</item>

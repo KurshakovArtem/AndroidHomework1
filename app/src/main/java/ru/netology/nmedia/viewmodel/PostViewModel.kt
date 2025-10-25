@@ -9,9 +9,12 @@ import androidx.lifecycle.asLiveData
 import androidx.lifecycle.switchMap
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import ru.netology.nmedia.auth.AppAuth
 import ru.netology.nmedia.db.AppDb
 import ru.netology.nmedia.dto.Post
 import ru.netology.nmedia.model.ErrorReport
@@ -27,6 +30,7 @@ import java.io.File
 
 private val empty = Post(
     id = 0,
+    authorId = 0,
     author = "",
     published = "",
     content = "",
@@ -34,16 +38,31 @@ private val empty = Post(
     likedByMe = false
 )
 
+
 class PostViewModel(application: Application) : AndroidViewModel(application) {
     private val repository: PostRepository = PostRepositoryNetworkImpl(
         AppDb.getInstance(application).postDao
     )
 
 
-    val data: LiveData<FeedModel> = repository.data
-        .map(::FeedModel)
-        .catch { it.printStackTrace() }  // реализовать обработку ошибок(snackbar)
+//    val data: LiveData<FeedModel> = repository.data
+//        .map(::FeedModel)
+//        .catch { it.printStackTrace() }  // реализовать обработку ошибок(snackbar)
+//        .asLiveData(Dispatchers.Default)
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val data: LiveData<FeedModel> = AppAuth.getInstance()
+        .authStateFlow
+        .flatMapLatest { (myId, _) ->
+            repository.data.map { posts ->
+                FeedModel(
+                    posts.map { it.copy(ownedByMe = myId == it.authorId) }
+                )
+            }
+        }
+        .catch { it.printStackTrace() }
         .asLiveData(Dispatchers.Default)
+
     val newerCount: LiveData<Int> = data.switchMap {
         repository.getNewerCount()
             .catch { e -> e.printStackTrace() } // Не сообщаем пользователю об ошибке в фоне
