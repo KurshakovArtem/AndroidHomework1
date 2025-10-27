@@ -21,6 +21,7 @@ import ru.netology.nmedia.auth.AppAuth
 import ru.netology.nmedia.dto.AuthState
 import ru.netology.nmedia.dto.Media
 import ru.netology.nmedia.dto.Post
+import ru.netology.nmedia.dto.PushToken
 import java.util.concurrent.TimeUnit
 
 private const val BASE_URL = "${BuildConfig.BASE_URL}/api/slow/"
@@ -90,6 +91,9 @@ interface PostApiService {
         @Part("name") name: RequestBody,
         @Part media: MultipartBody.Part,
     ): AuthState
+
+    @POST("users/push-tokens")
+    suspend fun sendPushToken(@Body token: PushToken)
 }
 
 object PostApi {

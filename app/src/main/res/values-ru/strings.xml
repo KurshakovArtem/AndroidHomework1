@@ -64,4 +64,5 @@
     <string name="confirm_password">Подтвердить пароль</string>
     <string name="error_registration">Ошибка регистрации</string>
     <string name="remove_avatar">Удалить аватарку</string>
+    <string name="push_message">У вас есть сообщение</string>
 </resources>

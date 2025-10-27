@@ -4,11 +4,18 @@ import android.content.Context
 import kotlinx.coroutines.flow.*
 import ru.netology.nmedia.dto.AuthState
 import androidx.core.content.edit
+import com.google.firebase.Firebase
+import com.google.firebase.messaging.messaging
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.asRequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import ru.netology.nmedia.api.PostApi
+import ru.netology.nmedia.dto.PushToken
 import java.io.File
 
 class AppAuth private constructor(context: Context) {
@@ -69,7 +76,7 @@ class AppAuth private constructor(context: Context) {
                     )
                 )
                 instance?.setAuth(authState.id, authState.token)
-            }catch (_: Exception) {
+            } catch (_: Exception) {
                 instance?.setAuth(0L, null)
                 throw RuntimeException("Ошибка регистрации")
             }
@@ -89,6 +96,7 @@ class AppAuth private constructor(context: Context) {
         } else {
             _authStateFlow = MutableStateFlow(AuthState(id, token))
         }
+        sendPushToken()
     }
 
     val authStateFlow: StateFlow<AuthState> = _authStateFlow.asStateFlow()
@@ -100,12 +108,25 @@ class AppAuth private constructor(context: Context) {
             putLong(ID_KEY, id)
             putString(TOKEN_KEY, token)
         }
+        sendPushToken()
     }
 
     @Synchronized
     fun removeAuth() {
         _authStateFlow.value = AuthState()
         prefs.edit { clear() }
+        sendPushToken()
+    }
+
+    fun sendPushToken(token: String? = null) {
+        CoroutineScope(Dispatchers.Default).launch {
+            try {
+                val pushToken = PushToken(token ?: Firebase.messaging.token.await())
+                PostApi.service.sendPushToken(pushToken)
+            } catch (e : Exception){
+                e.printStackTrace()
+            }
+        }
     }
 
 
