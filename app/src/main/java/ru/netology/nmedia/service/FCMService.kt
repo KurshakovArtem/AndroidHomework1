@@ -15,8 +15,9 @@ import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import com.google.gson.Gson
 import ru.netology.nmedia.R
+import ru.netology.nmedia.auth.AppAuth
 import ru.netology.nmedia.dto.Post
-import ru.netology.nmedia.viewmodel.PostViewModel
+import ru.netology.nmedia.dto.PushMessage
 import kotlin.random.Random
 
 class FCMService : FirebaseMessagingService() {
@@ -41,6 +42,7 @@ class FCMService : FirebaseMessagingService() {
     }
 
     override fun onNewToken(token: String) {
+        AppAuth.getInstance().sendPushToken(token)
         println("Token = $token")
     }
 
@@ -54,6 +56,7 @@ class FCMService : FirebaseMessagingService() {
                             Like::class.java
                         )
                     )
+
                     Action.POST -> handlePost(
                         gson.fromJson(
                             message.data[content],
@@ -62,7 +65,8 @@ class FCMService : FirebaseMessagingService() {
                     )
                 }
             }
-        } catch (e: IllegalArgumentException) {
+            handlePushToken(gson.fromJson(message.data[content], PushMessage::class.java))
+        } catch (_: IllegalArgumentException) {
             println("Пришло неверное значение")
             // реализация через Toast сообщение
             showErrorToast(getString(R.string.push_format_exception))
@@ -84,7 +88,7 @@ class FCMService : FirebaseMessagingService() {
         notify(notification)
     }
 
-    private fun handlePost(post: Post){
+    private fun handlePost(post: Post) {
         println(post)
         val notification = NotificationCompat.Builder(this, channelId)
             .setSmallIcon(R.drawable.ic_notification)
@@ -99,6 +103,23 @@ class FCMService : FirebaseMessagingService() {
             .build()
         notify(notification)
         // Необходимо подумать как передать новый пост в PostViewModel (чтобы добавить новый пост)
+    }
+
+    private fun handlePushToken(pushMessage: PushMessage) {
+        println(pushMessage)
+        if (pushMessage.recipientId == 0L ||
+            (pushMessage.recipientId != AppAuth.getInstance().authStateFlow.value.id &&
+                    pushMessage.recipientId != null)
+        ) {
+            AppAuth.getInstance().sendPushToken()
+        } else {
+            val notification = NotificationCompat.Builder(this, channelId)
+                .setSmallIcon(R.drawable.ic_notification)
+                .setContentTitle(getString(R.string.push_message))
+                .setContentText(pushMessage.content)
+                .build()
+            notify(notification)
+        }
     }
 
     private fun notify(notification: Notification) {
