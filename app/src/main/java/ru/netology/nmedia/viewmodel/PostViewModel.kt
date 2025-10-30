@@ -1,10 +1,9 @@
 package ru.netology.nmedia.viewmodel
 
-import android.app.Application
 import android.net.Uri
-import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.asLiveData
 import androidx.lifecycle.switchMap
 import androidx.lifecycle.viewModelScope
@@ -15,7 +14,6 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import ru.netology.nmedia.auth.AppAuth
-import ru.netology.nmedia.db.AppDb
 import ru.netology.nmedia.dto.Post
 import ru.netology.nmedia.model.ErrorReport
 import ru.netology.nmedia.model.FeedErrorMassage
@@ -23,7 +21,6 @@ import ru.netology.nmedia.model.FeedModel
 import ru.netology.nmedia.model.FeedModelState
 import ru.netology.nmedia.model.PhotoModel
 import ru.netology.nmedia.repository.PostRepository
-import ru.netology.nmedia.repository.PostRepositoryNetworkImpl
 import ru.netology.nmedia.supportingFunctions.SingleLiveEvent
 import java.io.File
 
@@ -39,19 +36,17 @@ private val empty = Post(
 )
 
 
-class PostViewModel(application: Application) : AndroidViewModel(application) {
-    private val repository: PostRepository = PostRepositoryNetworkImpl(
-        AppDb.getInstance(application).postDao
-    )
+class PostViewModel(
+    private val repository: PostRepository,
+    appAuth: AppAuth,
+) : ViewModel() {
 
 
-//    val data: LiveData<FeedModel> = repository.data
-//        .map(::FeedModel)
-//        .catch { it.printStackTrace() }  // реализовать обработку ошибок(snackbar)
-//        .asLiveData(Dispatchers.Default)
+
+
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    val data: LiveData<FeedModel> = AppAuth.getInstance()
+    val data: LiveData<FeedModel> = appAuth
         .authStateFlow
         .flatMapLatest { (myId, _) ->
             repository.data.map { posts ->

@@ -15,7 +15,7 @@ import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import com.google.gson.Gson
 import ru.netology.nmedia.R
-import ru.netology.nmedia.auth.AppAuth
+import ru.netology.nmedia.di.DependencyContainer
 import ru.netology.nmedia.dto.Post
 import ru.netology.nmedia.dto.PushMessage
 import kotlin.random.Random
@@ -42,8 +42,8 @@ class FCMService : FirebaseMessagingService() {
     }
 
     override fun onNewToken(token: String) {
-        AppAuth.getInstance().sendPushToken(token)
-        println("Token = $token")
+        DependencyContainer.getInstance().appAuth.sendPushToken(token)
+        //println("Token = $token")
     }
 
     override fun onMessageReceived(message: RemoteMessage) {
@@ -108,10 +108,10 @@ class FCMService : FirebaseMessagingService() {
     private fun handlePushToken(pushMessage: PushMessage) {
         println(pushMessage)
         if (pushMessage.recipientId == 0L ||
-            (pushMessage.recipientId != AppAuth.getInstance().authStateFlow.value.id &&
+            (pushMessage.recipientId != DependencyContainer.getInstance().appAuth.authStateFlow.value.id &&
                     pushMessage.recipientId != null)
         ) {
-            AppAuth.getInstance().sendPushToken()
+            DependencyContainer.getInstance().appAuth.sendPushToken()
         } else {
             val notification = NotificationCompat.Builder(this, channelId)
                 .setSmallIcon(R.drawable.ic_notification)

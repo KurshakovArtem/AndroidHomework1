@@ -25,11 +25,20 @@ import androidx.core.view.MenuProvider
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import ru.netology.nmedia.auth.AppAuth
+import ru.netology.nmedia.di.DependencyContainer
 import ru.netology.nmedia.viewmodel.AuthViewModel
+import ru.netology.nmedia.viewmodel.ViewModelFactory
 
 class AppActivity : AppCompatActivity() {
-    private val viewModel: AuthViewModel by viewModels()
+    val dependencyContainer = DependencyContainer.getInstance()
+    private val viewModel: AuthViewModel by viewModels(
+        factoryProducer = {
+            ViewModelFactory(
+                dependencyContainer.repository,
+                dependencyContainer.appAuth
+            )
+        }
+    )
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -79,6 +88,16 @@ class AppActivity : AppCompatActivity() {
             invalidateOptionsMenu()
         }
 
+        FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
+            if (!task.isSuccessful) {
+                println("some stuff happened: ${task.exception}")
+                return@addOnCompleteListener
+            }
+
+            val token = task.result
+            println("Token = $token")
+        }
+
         addMenuProvider(
             object : MenuProvider {
                 override fun onCreateMenu(
@@ -109,7 +128,7 @@ class AppActivity : AppCompatActivity() {
                             if (currentFragment == R.id.newPostFragment) {
                                 showLogoutDialog()
                             } else {
-                                AppAuth.getInstance().removeAuth()
+                                dependencyContainer.appAuth.removeAuth()
                             }
                             true
                         }
@@ -159,7 +178,7 @@ class AppActivity : AppCompatActivity() {
             .setTitle(R.string.sign_out)
             .setMessage(R.string.are_you_sure)
             .setPositiveButton(R.string.menu_logout) { _, _ ->
-                AppAuth.getInstance().removeAuth()
+                dependencyContainer.appAuth.removeAuth()
                 findNavController(R.id.nav_host_fragment).navigateUp()
             }
             .setNegativeButton(R.string.cancel) { dialog, _ ->

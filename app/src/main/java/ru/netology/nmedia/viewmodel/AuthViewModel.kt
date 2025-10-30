@@ -14,8 +14,10 @@ import ru.netology.nmedia.model.AuthModelState
 import ru.netology.nmedia.model.PhotoModel
 import java.io.File
 
-class AuthViewModel : ViewModel() {
-    val data: LiveData<AuthState> = AppAuth.getInstance()
+class AuthViewModel(
+    private val appAuth: AppAuth
+) : ViewModel() {
+    val data: LiveData<AuthState> = appAuth
         .authStateFlow
         .asLiveData(Dispatchers.Default)
 
@@ -24,7 +26,7 @@ class AuthViewModel : ViewModel() {
     val dataState: LiveData<AuthModelState>
         get() = _dataAuthState
     val isAuthorized: Boolean
-        get() = AppAuth.getInstance().authStateFlow.value.id != 0L
+        get() = appAuth.authStateFlow.value.id != 0L
 
     private val _photo = MutableLiveData<PhotoModel?>()
     val photo: LiveData<PhotoModel?>
@@ -34,7 +36,7 @@ class AuthViewModel : ViewModel() {
         viewModelScope.launch {
             try {
                 _dataAuthState.value = AuthModelState(loading = true)
-                AppAuth.sendLoginPassword(username, password)
+                appAuth.sendLoginPassword(username, password)
                 _dataAuthState.value = AuthModelState(success = true)
                 clearState()
             } catch (_: RuntimeException) {
@@ -51,10 +53,10 @@ class AuthViewModel : ViewModel() {
                 try {
                     _dataAuthState.value = AuthModelState(loading = true)
                     if (_photo.value == null) {
-                        AppAuth.sendRegistration(nickname, login, password)
+                        appAuth.sendRegistration(nickname, login, password)
                         _dataAuthState.value = AuthModelState(success = true)
                     } else {
-                        AppAuth.sendRegistrationWithPhoto(
+                        appAuth.sendRegistrationWithPhoto(
                             nickname,
                             login,
                             password,

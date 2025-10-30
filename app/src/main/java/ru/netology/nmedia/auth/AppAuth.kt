@@ -14,58 +14,65 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.asRequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
-import ru.netology.nmedia.api.PostApi
+import ru.netology.nmedia.di.DependencyContainer
 import ru.netology.nmedia.dto.PushToken
 import java.io.File
 
-class AppAuth private constructor(context: Context) {
+class AppAuth (context: Context) {
     companion object {
         private const val ID_KEY = "id"
         private const val TOKEN_KEY = "token"
 
-        @Volatile
-        private var instance: AppAuth? = null
+//        @Volatile
+//        private var instance: AppAuth? = null
+//
+//        fun getInstance(): AppAuth = synchronized(this) {
+//            instance ?: throw IllegalStateException(
+//                "AppAuth is not initialized, you must call AppAuth.initializeApp(Context context) first."
+//            )
+//        }
+//
+//        fun initApp(context: Context): AppAuth = synchronized(this) {
+//            instance ?: buildAuth(context).also { instance = it }
+//        }
+//
+//        private fun buildAuth(context: Context): AppAuth = AppAuth(context)
 
-        fun getInstance(): AppAuth = synchronized(this) {
-            instance ?: throw IllegalStateException(
-                "AppAuth is not initialized, you must call AppAuth.initializeApp(Context context) first."
-            )
-        }
+    }
 
-        fun initApp(context: Context): AppAuth = synchronized(this) {
-            instance ?: buildAuth(context).also { instance = it }
-        }
-
-        private fun buildAuth(context: Context): AppAuth = AppAuth(context)
-
-        suspend fun sendLoginPassword(username: String, password: String) {
+    suspend fun sendLoginPassword(username: String, password: String) {
             try {
-                val authState = PostApi.service.updateUser(username, password)
-                instance?.setAuth(authState.id, authState.token)
+                val authState =
+                    DependencyContainer.getInstance().apiService.updateUser(username, password)
+                setAuth(authState.id, authState.token)
             } catch (_: Exception) {
-                instance?.setAuth(0L, null)
+                setAuth(0L, null)
                 throw RuntimeException("Ошибка авторизации")
             }
         }
 
-        suspend fun sendRegistration(nickname: String, login: String, password: String) {
+    suspend fun sendRegistration(nickname: String, login: String, password: String) {
             try {
-                val authState = PostApi.service.registerUser(login, password, nickname)
-                instance?.setAuth(authState.id, authState.token)
+                val authState = DependencyContainer.getInstance().apiService.registerUser(
+                    login,
+                    password,
+                    nickname
+                )
+                setAuth(authState.id, authState.token)
             } catch (_: Exception) {
-                instance?.setAuth(0L, null)
+                setAuth(0L, null)
                 throw RuntimeException("Ошибка регистрации")
             }
         }
 
-        suspend fun sendRegistrationWithPhoto(
+    suspend fun sendRegistrationWithPhoto(
             nickname: String,
             login: String,
             password: String,
             file: File
         ) {
             try {
-                val authState = PostApi.service.registerWithPhoto(
+                val authState = DependencyContainer.getInstance().apiService.registerWithPhoto(
                     login = login.toRequestBody("text/plain".toMediaType()),
                     pass = password.toRequestBody("text/plain".toMediaType()),
                     name = nickname.toRequestBody("text/plain".toMediaType()),
@@ -75,13 +82,12 @@ class AppAuth private constructor(context: Context) {
                         file.asRequestBody()
                     )
                 )
-                instance?.setAuth(authState.id, authState.token)
+                setAuth(authState.id, authState.token)
             } catch (_: Exception) {
-                instance?.setAuth(0L, null)
+                setAuth(0L, null)
                 throw RuntimeException("Ошибка регистрации")
             }
         }
-    }
 
     private val prefs =
         context.applicationContext.getSharedPreferences("auth", Context.MODE_PRIVATE)
@@ -122,8 +128,8 @@ class AppAuth private constructor(context: Context) {
         CoroutineScope(Dispatchers.Default).launch {
             try {
                 val pushToken = PushToken(token ?: Firebase.messaging.token.await())
-                PostApi.service.sendPushToken(pushToken)
-            } catch (e : Exception){
+                DependencyContainer.getInstance().apiService.sendPushToken(pushToken)
+            } catch (e: Exception) {
                 e.printStackTrace()
             }
         }

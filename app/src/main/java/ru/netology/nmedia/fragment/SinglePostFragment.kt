@@ -14,18 +14,28 @@ import com.google.android.material.snackbar.Snackbar
 import ru.netology.nmedia.R
 import ru.netology.nmedia.adapter.OnInteractionListener
 import ru.netology.nmedia.adapter.PostViewHolder
-import ru.netology.nmedia.auth.AppAuth
 import ru.netology.nmedia.databinding.FragmentSinglePostBinding
+import ru.netology.nmedia.di.DependencyContainer
 import ru.netology.nmedia.dto.Post
 import ru.netology.nmedia.fragment.NewPostFragment.Companion.textArg
 import ru.netology.nmedia.model.FeedErrorMassage
 import ru.netology.nmedia.viewmodel.PostViewModel
+import ru.netology.nmedia.viewmodel.ViewModelFactory
 import java.lang.RuntimeException
 import kotlin.getValue
 
 class SinglePostFragment : Fragment() {
 
-    private val viewModel: PostViewModel by viewModels(ownerProducer = ::requireParentFragment)
+    private val dependencyContainer = DependencyContainer.getInstance()
+    private val viewModel: PostViewModel by viewModels(
+        ownerProducer = ::requireParentFragment,
+        factoryProducer = {
+            ViewModelFactory(
+                dependencyContainer.repository,
+                dependencyContainer.appAuth
+            )
+        }
+    )
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -40,7 +50,7 @@ class SinglePostFragment : Fragment() {
 
         val interactionListener = object : OnInteractionListener {
             override fun onLike(post: Post) {
-                if (AppAuth.getInstance().authStateFlow.value.id != 0L) {
+                if (dependencyContainer.appAuth.authStateFlow.value.id != 0L) {
                     viewModel.likeById(post.id)
                 } else {
                     showLoginDialog()

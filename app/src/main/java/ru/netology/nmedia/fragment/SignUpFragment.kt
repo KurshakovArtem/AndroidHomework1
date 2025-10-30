@@ -14,12 +14,23 @@ import androidx.navigation.fragment.findNavController
 import com.github.dhaval2404.imagepicker.ImagePicker
 import ru.netology.nmedia.R
 import ru.netology.nmedia.databinding.FragmentSignUpBinding
+import ru.netology.nmedia.di.DependencyContainer
 import ru.netology.nmedia.viewmodel.AuthViewModel
+import ru.netology.nmedia.viewmodel.ViewModelFactory
 import kotlin.getValue
 
 class SignUpFragment : Fragment() {
 
-    private val viewModel: AuthViewModel by viewModels(ownerProducer = ::requireParentFragment)
+    private val dependencyContainer = DependencyContainer.getInstance()
+    private val viewModel: AuthViewModel by viewModels(
+        ownerProducer = ::requireParentFragment,
+        factoryProducer = {
+            ViewModelFactory(
+                dependencyContainer.repository,
+                dependencyContainer.appAuth
+            )
+        }
+    )
 
     override fun onCreateView(
         inflater: LayoutInflater,
