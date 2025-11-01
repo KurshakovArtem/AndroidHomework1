@@ -44,7 +44,7 @@ android {
     }
     kotlinOptions {
         jvmTarget = "11"
-        freeCompilerArgs += ["-Xopt-in=kotlin.RequiresOptIn"]
+
         freeCompilerArgs = ['-XXLanguage:+PropertyParamAnnotationDefaultTargetMode']
     }
     ksp {
@@ -85,4 +85,5 @@ dependencies {
     implementation libs.imagepicker
     implementation libs.hilt.android
     ksp "com.google.dagger:hilt-compiler:$hilt_version"
+    implementation libs.kotlinx.coroutines.play.services
 }
