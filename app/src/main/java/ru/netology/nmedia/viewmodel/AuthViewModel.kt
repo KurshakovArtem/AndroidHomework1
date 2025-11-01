@@ -6,6 +6,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import ru.netology.nmedia.auth.AppAuth
@@ -13,8 +14,10 @@ import ru.netology.nmedia.dto.AuthState
 import ru.netology.nmedia.model.AuthModelState
 import ru.netology.nmedia.model.PhotoModel
 import java.io.File
+import javax.inject.Inject
 
-class AuthViewModel(
+@HiltViewModel
+class AuthViewModel @Inject constructor(
     private val appAuth: AppAuth
 ) : ViewModel() {
     val data: LiveData<AuthState> = appAuth

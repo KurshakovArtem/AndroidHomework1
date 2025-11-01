@@ -25,20 +25,17 @@ import androidx.core.view.MenuProvider
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import ru.netology.nmedia.di.DependencyContainer
+import dagger.hilt.android.AndroidEntryPoint
+import ru.netology.nmedia.auth.AppAuth
 import ru.netology.nmedia.viewmodel.AuthViewModel
-import ru.netology.nmedia.viewmodel.ViewModelFactory
+import javax.inject.Inject
 
+@AndroidEntryPoint
 class AppActivity : AppCompatActivity() {
-    val dependencyContainer = DependencyContainer.getInstance()
-    private val viewModel: AuthViewModel by viewModels(
-        factoryProducer = {
-            ViewModelFactory(
-                dependencyContainer.repository,
-                dependencyContainer.appAuth
-            )
-        }
-    )
+
+    @Inject
+    lateinit var appAuth: AppAuth
+    private val viewModel: AuthViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -128,7 +125,7 @@ class AppActivity : AppCompatActivity() {
                             if (currentFragment == R.id.newPostFragment) {
                                 showLogoutDialog()
                             } else {
-                                dependencyContainer.appAuth.removeAuth()
+                                appAuth.removeAuth()
                             }
                             true
                         }
@@ -178,7 +175,7 @@ class AppActivity : AppCompatActivity() {
             .setTitle(R.string.sign_out)
             .setMessage(R.string.are_you_sure)
             .setPositiveButton(R.string.menu_logout) { _, _ ->
-                dependencyContainer.appAuth.removeAuth()
+                appAuth.removeAuth()
                 findNavController(R.id.nav_host_fragment).navigateUp()
             }
             .setNegativeButton(R.string.cancel) { dialog, _ ->

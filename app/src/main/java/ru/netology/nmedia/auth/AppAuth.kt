@@ -6,6 +6,11 @@ import ru.netology.nmedia.dto.AuthState
 import androidx.core.content.edit
 import com.google.firebase.Firebase
 import com.google.firebase.messaging.messaging
+import dagger.hilt.EntryPoint
+import dagger.hilt.InstallIn
+import dagger.hilt.android.EntryPointAccessors
+import dagger.hilt.android.qualifiers.ApplicationContext
+import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -14,88 +19,28 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.asRequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
-import ru.netology.nmedia.di.DependencyContainer
+import ru.netology.nmedia.api.PostApiService
 import ru.netology.nmedia.dto.PushToken
 import java.io.File
+import javax.inject.Inject
+import javax.inject.Singleton
 
-class AppAuth (context: Context) {
-    companion object {
-        private const val ID_KEY = "id"
-        private const val TOKEN_KEY = "token"
+@Singleton
+class AppAuth @Inject constructor(
+    @ApplicationContext
+    private val context: Context
+) {
 
-//        @Volatile
-//        private var instance: AppAuth? = null
-//
-//        fun getInstance(): AppAuth = synchronized(this) {
-//            instance ?: throw IllegalStateException(
-//                "AppAuth is not initialized, you must call AppAuth.initializeApp(Context context) first."
-//            )
-//        }
-//
-//        fun initApp(context: Context): AppAuth = synchronized(this) {
-//            instance ?: buildAuth(context).also { instance = it }
-//        }
-//
-//        private fun buildAuth(context: Context): AppAuth = AppAuth(context)
-
-    }
-
-    suspend fun sendLoginPassword(username: String, password: String) {
-            try {
-                val authState =
-                    DependencyContainer.getInstance().apiService.updateUser(username, password)
-                setAuth(authState.id, authState.token)
-            } catch (_: Exception) {
-                setAuth(0L, null)
-                throw RuntimeException("Ошибка авторизации")
-            }
-        }
-
-    suspend fun sendRegistration(nickname: String, login: String, password: String) {
-            try {
-                val authState = DependencyContainer.getInstance().apiService.registerUser(
-                    login,
-                    password,
-                    nickname
-                )
-                setAuth(authState.id, authState.token)
-            } catch (_: Exception) {
-                setAuth(0L, null)
-                throw RuntimeException("Ошибка регистрации")
-            }
-        }
-
-    suspend fun sendRegistrationWithPhoto(
-            nickname: String,
-            login: String,
-            password: String,
-            file: File
-        ) {
-            try {
-                val authState = DependencyContainer.getInstance().apiService.registerWithPhoto(
-                    login = login.toRequestBody("text/plain".toMediaType()),
-                    pass = password.toRequestBody("text/plain".toMediaType()),
-                    name = nickname.toRequestBody("text/plain".toMediaType()),
-                    media = MultipartBody.Part.createFormData(
-                        "file",
-                        file.name,
-                        file.asRequestBody()
-                    )
-                )
-                setAuth(authState.id, authState.token)
-            } catch (_: Exception) {
-                setAuth(0L, null)
-                throw RuntimeException("Ошибка регистрации")
-            }
-        }
+    private val idKey = "id"
+    private val tokenKey = "token"
 
     private val prefs =
         context.applicationContext.getSharedPreferences("auth", Context.MODE_PRIVATE)
     private val _authStateFlow: MutableStateFlow<AuthState>
 
     init {
-        val id = prefs.getLong(ID_KEY, 0)
-        val token = prefs.getString(TOKEN_KEY, null)
+        val id = prefs.getLong(idKey, 0)
+        val token = prefs.getString(tokenKey, null)
         if (id == 0L || token == null) {
             _authStateFlow = MutableStateFlow(AuthState())
             prefs.edit { clear() }
@@ -107,12 +52,68 @@ class AppAuth (context: Context) {
 
     val authStateFlow: StateFlow<AuthState> = _authStateFlow.asStateFlow()
 
+    @InstallIn(SingletonComponent::class)
+    @EntryPoint
+    interface AppAuthEntryPoint {
+        fun apiService(): PostApiService
+    }
+
+    suspend fun sendLoginPassword(username: String, password: String) {
+        try {
+            val authState =
+                getApiService(context).updateUser(username, password)
+            setAuth(authState.id, authState.token)
+        } catch (_: Exception) {
+            setAuth(0L, null)
+            throw RuntimeException("Ошибка авторизации")
+        }
+    }
+
+    suspend fun sendRegistration(nickname: String, login: String, password: String) {
+        try {
+            val authState = getApiService(context).registerUser(
+                login,
+                password,
+                nickname
+            )
+            setAuth(authState.id, authState.token)
+        } catch (_: Exception) {
+            setAuth(0L, null)
+            throw RuntimeException("Ошибка регистрации")
+        }
+    }
+
+    suspend fun sendRegistrationWithPhoto(
+        nickname: String,
+        login: String,
+        password: String,
+        file: File
+    ) {
+        try {
+            val authState = getApiService(context).registerWithPhoto(
+                login = login.toRequestBody("text/plain".toMediaType()),
+                pass = password.toRequestBody("text/plain".toMediaType()),
+                name = nickname.toRequestBody("text/plain".toMediaType()),
+                media = MultipartBody.Part.createFormData(
+                    "file",
+                    file.name,
+                    file.asRequestBody()
+                )
+            )
+            setAuth(authState.id, authState.token)
+        } catch (_: Exception) {
+            setAuth(0L, null)
+            throw RuntimeException("Ошибка регистрации")
+        }
+    }
+
+
     @Synchronized
     fun setAuth(id: Long, token: String?) {
         _authStateFlow.value = AuthState(id, token)
         prefs.edit {
-            putLong(ID_KEY, id)
-            putString(TOKEN_KEY, token)
+            putLong(idKey, id)
+            putString(tokenKey, token)
         }
         sendPushToken()
     }
@@ -128,12 +129,18 @@ class AppAuth (context: Context) {
         CoroutineScope(Dispatchers.Default).launch {
             try {
                 val pushToken = PushToken(token ?: Firebase.messaging.token.await())
-                DependencyContainer.getInstance().apiService.sendPushToken(pushToken)
+                getApiService(context).sendPushToken(pushToken)
             } catch (e: Exception) {
                 e.printStackTrace()
             }
         }
     }
 
-
+    private fun getApiService(context: Context): PostApiService {
+        val hiltEntryPoint = EntryPointAccessors.fromApplication(
+            context,
+            AppAuthEntryPoint::class.java
+        )
+        return hiltEntryPoint.apiService()
+    }
 }
