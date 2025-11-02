@@ -1,12 +1,11 @@
 package ru.netology.nmedia.api
 
+import okhttp3.Interceptor
 import okhttp3.MultipartBody
 import okhttp3.OkHttpClient
 import okhttp3.RequestBody
-import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
-import retrofit2.create
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.Field
@@ -17,7 +16,6 @@ import retrofit2.http.POST
 import retrofit2.http.Part
 import retrofit2.http.Path
 import ru.netology.nmedia.BuildConfig
-import ru.netology.nmedia.auth.AppAuth
 import ru.netology.nmedia.dto.AuthState
 import ru.netology.nmedia.dto.Media
 import ru.netology.nmedia.dto.Post
@@ -26,30 +24,19 @@ import java.util.concurrent.TimeUnit
 
 private const val BASE_URL = "${BuildConfig.BASE_URL}/api/slow/"
 
-private val client = OkHttpClient.Builder()
+fun client(vararg interceptors: Interceptor): OkHttpClient = OkHttpClient.Builder()
     .connectTimeout(30, TimeUnit.SECONDS)
-    .addInterceptor { chain ->
-        AppAuth.getInstance().authStateFlow.value.token?.let { token ->
-            val newRequest = chain.request().newBuilder()
-                .addHeader("Authorization", token)
-                .build()
-            return@addInterceptor chain.proceed(newRequest)
-        }
-        chain.proceed(chain.request())
-    }
     .apply {
-        if (BuildConfig.DEBUG) {
-            addInterceptor(HttpLoggingInterceptor().apply {
-                level = HttpLoggingInterceptor.Level.BODY
-            })
+        interceptors.forEach {
+            this.addInterceptor(it)
         }
     }
     .build()
 
-private val retrofit = Retrofit.Builder()
+fun retrofit(client: OkHttpClient): Retrofit = Retrofit.Builder()
     .addConverterFactory(GsonConverterFactory.create())
-    .client(client)
     .baseUrl(BASE_URL)
+    .client(client)
     .build()
 
 interface PostApiService {
@@ -81,7 +68,11 @@ interface PostApiService {
 
     @FormUrlEncoded
     @POST("users/registration")
-    suspend fun registerUser(@Field("login") login: String, @Field("pass") pass: String, @Field("name") name: String): AuthState
+    suspend fun registerUser(
+        @Field("login") login: String,
+        @Field("pass") pass: String,
+        @Field("name") name: String
+    ): AuthState
 
     @Multipart
     @POST("users/registration")
@@ -94,10 +85,4 @@ interface PostApiService {
 
     @POST("users/push-tokens")
     suspend fun sendPushToken(@Body token: PushToken)
-}
-
-object PostApi {
-    val service: PostApiService by lazy {
-        retrofit.create()
-    }
 }

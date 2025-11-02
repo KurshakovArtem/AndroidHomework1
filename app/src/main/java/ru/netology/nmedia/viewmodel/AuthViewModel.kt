@@ -6,6 +6,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import ru.netology.nmedia.auth.AppAuth
@@ -13,9 +14,13 @@ import ru.netology.nmedia.dto.AuthState
 import ru.netology.nmedia.model.AuthModelState
 import ru.netology.nmedia.model.PhotoModel
 import java.io.File
+import javax.inject.Inject
 
-class AuthViewModel : ViewModel() {
-    val data: LiveData<AuthState> = AppAuth.getInstance()
+@HiltViewModel
+class AuthViewModel @Inject constructor(
+    private val appAuth: AppAuth
+) : ViewModel() {
+    val data: LiveData<AuthState> = appAuth
         .authStateFlow
         .asLiveData(Dispatchers.Default)
 
@@ -24,7 +29,7 @@ class AuthViewModel : ViewModel() {
     val dataState: LiveData<AuthModelState>
         get() = _dataAuthState
     val isAuthorized: Boolean
-        get() = AppAuth.getInstance().authStateFlow.value.id != 0L
+        get() = appAuth.authStateFlow.value.id != 0L
 
     private val _photo = MutableLiveData<PhotoModel?>()
     val photo: LiveData<PhotoModel?>
@@ -34,7 +39,7 @@ class AuthViewModel : ViewModel() {
         viewModelScope.launch {
             try {
                 _dataAuthState.value = AuthModelState(loading = true)
-                AppAuth.sendLoginPassword(username, password)
+                appAuth.sendLoginPassword(username, password)
                 _dataAuthState.value = AuthModelState(success = true)
                 clearState()
             } catch (_: RuntimeException) {
@@ -51,10 +56,10 @@ class AuthViewModel : ViewModel() {
                 try {
                     _dataAuthState.value = AuthModelState(loading = true)
                     if (_photo.value == null) {
-                        AppAuth.sendRegistration(nickname, login, password)
+                        appAuth.sendRegistration(nickname, login, password)
                         _dataAuthState.value = AuthModelState(success = true)
                     } else {
-                        AppAuth.sendRegistrationWithPhoto(
+                        appAuth.sendRegistrationWithPhoto(
                             nickname,
                             login,
                             password,

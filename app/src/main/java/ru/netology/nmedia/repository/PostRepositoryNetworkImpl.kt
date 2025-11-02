@@ -16,7 +16,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.asRequestBody
-import ru.netology.nmedia.api.PostApi
+import ru.netology.nmedia.api.PostApiService
 import ru.netology.nmedia.dao.PostDao
 import ru.netology.nmedia.dto.Attachment
 import ru.netology.nmedia.dto.AttachmentType
@@ -27,8 +27,14 @@ import ru.netology.nmedia.entity.toDto
 import ru.netology.nmedia.entity.toEntity
 import ru.netology.nmedia.error.AppError
 import java.io.File
+import javax.inject.Inject
+import javax.inject.Singleton
 
-class PostRepositoryNetworkImpl(private val dao: PostDao) : PostRepository {
+@Singleton
+class PostRepositoryNetworkImpl @Inject constructor(
+    private val dao: PostDao,
+    private val apiService: PostApiService
+) : PostRepository {
     private var draftContent = ""
     private var photoMap = mutableMapOf<Long, File>()
 
@@ -56,7 +62,7 @@ class PostRepositoryNetworkImpl(private val dao: PostDao) : PostRepository {
                 syncServerTry.awaitAll()
 
                 val posts = try {
-                    PostApi.service.getAll().map { post ->
+                    apiService.getAll().map { post ->
                         // Не обновляем с сервера посты, которые отредактированны, но не синхронезированны с сервером
                         val postId = post.id
                         if (flowPosts.find { it.id == postId }?.syncServerState
@@ -85,7 +91,7 @@ class PostRepositoryNetworkImpl(private val dao: PostDao) : PostRepository {
         while (true) {
             delay(180_000L)
             val lastId = getLastId().first()
-            val newerPosts = PostApi.service.getNewer(lastId).map {
+            val newerPosts = apiService.getNewer(lastId).map {
                 it.copy(syncServerState = true, isVisible = false)
             }
             dao.insert(newerPosts.toEntity())
@@ -127,7 +133,7 @@ class PostRepositoryNetworkImpl(private val dao: PostDao) : PostRepository {
                 Attachment(url = it.id, description = "", type = AttachmentType.IMAGE)
             })
             val postFromServer =
-                PostApi.service.save(postWithAttachment)
+                apiService.save(postWithAttachment)
                     .copy(syncServerState = true, isVisible = true)
             dao.removeById(notSyncId)
             photoMap.remove(notSyncId)
@@ -150,9 +156,9 @@ class PostRepositoryNetworkImpl(private val dao: PostDao) : PostRepository {
                 Attachment(url = it.id, description = "", type = AttachmentType.IMAGE)
             })
             val postFromServer = if (post.id < 0) {
-                PostApi.service.save(postWithAttachment.copy(id = 0))
+                apiService.save(postWithAttachment.copy(id = 0))
             } else {
-                PostApi.service.save(postWithAttachment)
+                apiService.save(postWithAttachment)
             }
             dao.removeById(post.id)
             photoMap.remove(post.id)
@@ -171,7 +177,7 @@ class PostRepositoryNetworkImpl(private val dao: PostDao) : PostRepository {
     }
 
     private suspend fun upload(file: File): Media =
-        PostApi.service.upload(
+        apiService.upload(
             MultipartBody.Part.createFormData(
                 "file",
                 file.name,
@@ -188,7 +194,7 @@ class PostRepositoryNetworkImpl(private val dao: PostDao) : PostRepository {
         }
         try {
             dao.removeById(id)
-            PostApi.service.removeById(id)
+            apiService.removeById(id)
         } catch (_: Exception) {
             dao.insert(PostEntity.fromDto(oldPost))
             throw RuntimeException("Server error")
@@ -200,7 +206,7 @@ class PostRepositoryNetworkImpl(private val dao: PostDao) : PostRepository {
             dao.getPostById(id)?.toDto()?.likedByMe ?: throw RuntimeException("DB error")
         try {
             dao.likeById(id)
-            if (!isLiked) PostApi.service.likeById(id) else PostApi.service.dislikeById(id)
+            if (!isLiked) apiService.likeById(id) else apiService.dislikeById(id)
         } catch (_: Exception) {
             dao.likeById(id)
             throw RuntimeException("Server error")

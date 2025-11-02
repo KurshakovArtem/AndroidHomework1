@@ -7,10 +7,11 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.core.net.toUri
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.viewModels
+import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
+import dagger.hilt.android.AndroidEntryPoint
 import ru.netology.nmedia.R
 import ru.netology.nmedia.adapter.OnInteractionListener
 import ru.netology.nmedia.adapter.PostViewHolder
@@ -20,12 +21,15 @@ import ru.netology.nmedia.dto.Post
 import ru.netology.nmedia.fragment.NewPostFragment.Companion.textArg
 import ru.netology.nmedia.model.FeedErrorMassage
 import ru.netology.nmedia.viewmodel.PostViewModel
-import java.lang.RuntimeException
-import kotlin.getValue
+import javax.inject.Inject
 
+@AndroidEntryPoint
 class SinglePostFragment : Fragment() {
 
-    private val viewModel: PostViewModel by viewModels(ownerProducer = ::requireParentFragment)
+    private val viewModel: PostViewModel by activityViewModels()
+
+    @Inject
+    lateinit var appAuth: AppAuth
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -40,7 +44,7 @@ class SinglePostFragment : Fragment() {
 
         val interactionListener = object : OnInteractionListener {
             override fun onLike(post: Post) {
-                if (AppAuth.getInstance().authStateFlow.value.id != 0L) {
+                if (appAuth.authStateFlow.value.id != 0L) {
                     viewModel.likeById(post.id)
                 } else {
                     showLoginDialog()

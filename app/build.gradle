@@ -3,6 +3,7 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.ksp)
     alias(libs.plugins.google.services)
+    id "com.google.dagger.hilt.android" version "$hilt_version"
 }
 
 android {
@@ -43,6 +44,8 @@ android {
     }
     kotlinOptions {
         jvmTarget = "11"
+
+        freeCompilerArgs = ['-XXLanguage:+PropertyParamAnnotationDefaultTargetMode']
     }
     ksp {
         arg("room.schemaLocation", "$projectDir/schemas")
@@ -80,4 +83,7 @@ dependencies {
     implementation libs.converter.gson
     implementation libs.logging.interceptor
     implementation libs.imagepicker
+    implementation libs.hilt.android
+    ksp "com.google.dagger:hilt-compiler:$hilt_version"
+    implementation libs.kotlinx.coroutines.play.services
 }
