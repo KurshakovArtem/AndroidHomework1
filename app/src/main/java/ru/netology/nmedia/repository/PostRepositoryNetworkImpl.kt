@@ -28,7 +28,9 @@ import ru.netology.nmedia.entity.toEntity
 import ru.netology.nmedia.error.AppError
 import java.io.File
 import javax.inject.Inject
+import javax.inject.Singleton
 
+@Singleton
 class PostRepositoryNetworkImpl @Inject constructor(
     private val dao: PostDao,
     private val apiService: PostApiService
