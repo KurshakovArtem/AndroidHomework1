@@ -37,6 +37,49 @@ interface PostDao {
     )
     fun getAllInvisibleAndVisible(): Flow<List<PostEntity>>
 
+    @Query(
+        """
+            SELECT * FROM PostEntity 
+            ORDER BY
+                CASE
+                    WHEN id <= 0 THEN 0
+                    ELSE 1
+                END,
+                id DESC
+            LIMIT :count
+            """
+    )
+    suspend fun getLatest(count: Int): List<PostEntity>
+
+    @Query(
+        """
+            SELECT * FROM PostEntity
+            WHERE id < :id
+            ORDER BY
+                CASE
+                    WHEN id <= 0 THEN 0
+                     ELSE 1
+                END
+            LIMIT :count
+            """
+    )
+    suspend fun getBefore(id: Long, count: Int): List<PostEntity>
+
+    @Query(
+        """
+    SELECT * FROM PostEntity 
+    WHERE id > :id
+    ORDER BY 
+        CASE 
+            WHEN id <= 0 THEN 0   
+            ELSE 1               
+        END,
+        id DESC
+    LIMIT :count
+    """
+    )
+    suspend fun getAfter(id: Long, count: Int): List<PostEntity>
+
     @Query("UPDATE PostEntity SET isVisible = 1")
     suspend fun setAllVisible()
 

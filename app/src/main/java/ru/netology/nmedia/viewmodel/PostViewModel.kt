@@ -4,13 +4,13 @@ import android.net.Uri
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.asLiveData
-import androidx.lifecycle.switchMap
 import androidx.lifecycle.viewModelScope
+import androidx.paging.PagingData
+import androidx.paging.cachedIn
+import androidx.paging.map
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
@@ -18,7 +18,6 @@ import ru.netology.nmedia.auth.AppAuth
 import ru.netology.nmedia.dto.Post
 import ru.netology.nmedia.model.ErrorReport
 import ru.netology.nmedia.model.FeedErrorMassage
-import ru.netology.nmedia.model.FeedModel
 import ru.netology.nmedia.model.FeedModelState
 import ru.netology.nmedia.model.PhotoModel
 import ru.netology.nmedia.repository.PostRepository
@@ -44,28 +43,25 @@ class PostViewModel @Inject constructor(
     appAuth: AppAuth,
 ) : ViewModel() {
 
-
-
-
+    private val cached = repository.data.cachedIn(viewModelScope)
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    val data: LiveData<FeedModel> = appAuth
+    val data: Flow<PagingData<Post>> = appAuth
         .authStateFlow
         .flatMapLatest { (myId, _) ->
-            repository.data.map { posts ->
-                FeedModel(
-                    posts.map { it.copy(ownedByMe = myId == it.authorId) }
-                )
+            cached.map { pagingData ->
+                pagingData.map { post ->
+                    post.copy(ownedByMe = post.authorId == myId)
+                }
             }
         }
-        .catch { it.printStackTrace() }
-        .asLiveData(Dispatchers.Default)
 
-    val newerCount: LiveData<Int> = data.switchMap {
-        repository.getNewerCount()
-            .catch { e -> e.printStackTrace() } // Не сообщаем пользователю об ошибке в фоне
-            .asLiveData(Dispatchers.Default)
-    }
+
+//    val newerCount: LiveData<Int> = data.switchMap {
+//        repository.getNewerCount()
+//            .catch { e -> e.printStackTrace() } // Не сообщаем пользователю об ошибке в фоне
+//            .asLiveData(Dispatchers.Default)
+//    }
     private val _dataState = MutableLiveData<FeedModelState>()
     val dataState: LiveData<FeedModelState>
         get() = _dataState
@@ -182,24 +178,24 @@ class PostViewModel @Inject constructor(
         }
     }
 
-    fun likeById(id: Long) {
-        val isLiked = data.value?.posts?.find { it.id == id }?.likedByMe ?: return
+    fun likeById(post: Post) {
+        val isLiked = post.likedByMe
         viewModelScope.launch {
             try {
-                repository.likeByIdAsync(id)
+                repository.likeByIdAsync(post.id)
                 _dataState.value = FeedModelState(errorReport = null)
             } catch (_: RuntimeException) {
                 if (!isLiked) {
                     _dataState.value = FeedModelState(
                         errorReport = ErrorReport(
-                            id,
+                            post.id,
                             FeedErrorMassage.LIKE_ERROR
                         )
                     )
                 } else {
                     _dataState.value = FeedModelState(
                         errorReport = ErrorReport(
-                            id,
+                            post.id,
                             FeedErrorMassage.DISLIKE_ERROR
                         )
                     )

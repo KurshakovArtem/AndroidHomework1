@@ -1,6 +1,9 @@
 package ru.netology.nmedia.repository
 
 
+import androidx.paging.Pager
+import androidx.paging.PagingConfig
+import androidx.paging.map
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
@@ -29,6 +32,8 @@ import ru.netology.nmedia.error.AppError
 import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
+import androidx.paging.PagingData
+import kotlinx.coroutines.flow.mapLatest
 
 @Singleton
 class PostRepositoryNetworkImpl @Inject constructor(
@@ -38,43 +43,48 @@ class PostRepositoryNetworkImpl @Inject constructor(
     private var draftContent = ""
     private var photoMap = mutableMapOf<Long, File>()
 
-    override val data = dao.getAll()
-        .map(List<PostEntity>::toDto)
-        .flowOn(Dispatchers.Default)
+//    override val data = dao.getAll()
+//        .map(List<PostEntity>::toDto)
+//        .flowOn(Dispatchers.Default)
+
+    override val data: Flow<PagingData<Post>> = Pager(
+        config = PagingConfig(pageSize = 10, enablePlaceholders = false),
+        pagingSourceFactory = { PostPagingSource(apiService) }
+    ).flow
 
 
     override suspend fun getAllAsync() {
         withContext(Dispatchers.IO + SupervisorJob()) {
             try {
-                dao.setAllVisible()
-                val flowPosts = data.firstOrNull().orEmpty()
-                val syncServerTry = flowPosts.map { post ->
-                    async {
-                        try {
-                            if (!post.syncServerState) {
-                                retrySaveAsync(post)
-                            }
-                        } catch (_: RuntimeException) {
-                            println("+1 необновлённый пост")
-                        }
-                    }
-                }
-                syncServerTry.awaitAll()
+//                dao.setAllVisible()
+//                val flowPosts = data.firstOrNull().orEmpty()
+//                val syncServerTry = flowPosts.map { post ->
+//                    async {
+//                        try {
+//                            if (!post.syncServerState) {
+//                                retrySaveAsync(post)
+//                            }
+//                        } catch (_: RuntimeException) {
+//                            println("+1 необновлённый пост")
+//                        }
+//                    }
+//                }
+//                syncServerTry.awaitAll()
 
                 val posts = try {
                     apiService.getAll().map { post ->
                         // Не обновляем с сервера посты, которые отредактированны, но не синхронезированны с сервером
-                        val postId = post.id
-                        if (flowPosts.find { it.id == postId }?.syncServerState
-                                ?: false
-                        ) {
+//                        val postId = post.id
+//                        if (flowPosts.find { it.id == postId }?.syncServerState
+//                                ?: false
+//                        ) {
                             post.copy(syncServerState = true, isVisible = true)
-                        } else {
-                            flowPosts.find { it.id == postId } ?: post.copy(
-                                syncServerState = true,
-                                isVisible = true
-                            )
-                        }
+//                        } else {
+//                            flowPosts.find { it.id == postId } ?: post.copy(
+//                                syncServerState = true,
+//                                isVisible = true
+//                            )
+//                        }
                     }
                 } catch (_: Exception) {
                     println("Ошибка обновления постов")
@@ -106,24 +116,24 @@ class PostRepositoryNetworkImpl @Inject constructor(
     }
 
     override suspend fun saveAsync(post: Post, photo: File?): Post {
-        val flowPosts = data.firstOrNull().orEmpty()
-        val minimalId = if ((flowPosts.minOfOrNull { it.id } ?: 0) >= 0) -1
-        else (flowPosts.minOfOrNull { it.id } ?: 0) - 1
-        // Если новый пост, то id отрицательный
-        // Если редактируем пост, то id оригинального поста
-        val notSyncId = if (post.id != 0L) post.id else minimalId
-        dao.insert(
-            PostEntity.fromDto(
-                post.copy(
-                    id = notSyncId,
-                    syncServerState = false,
-                    isVisible = true
-                )
-            )
-        )
-        if (photo != null) {
-            photoMap[notSyncId] = photo
-        }
+//        val flowPosts = data.firstOrNull().orEmpty()
+//        val minimalId = if ((flowPosts.minOfOrNull { it.id } ?: 0) >= 0) -1
+//        else (flowPosts.minOfOrNull { it.id } ?: 0) - 1
+//        // Если новый пост, то id отрицательный
+//        // Если редактируем пост, то id оригинального поста
+//        val notSyncId = if (post.id != 0L) post.id else minimalId
+//        dao.insert(
+//            PostEntity.fromDto(
+//                post.copy(
+//                    id = notSyncId,
+//                    syncServerState = false,
+//                    isVisible = true
+//                )
+//            )
+//        )
+//        if (photo != null) {
+//            photoMap[notSyncId] = photo
+//        }
 
         try {
             val media = photo?.let {
@@ -135,13 +145,13 @@ class PostRepositoryNetworkImpl @Inject constructor(
             val postFromServer =
                 apiService.save(postWithAttachment)
                     .copy(syncServerState = true, isVisible = true)
-            dao.removeById(notSyncId)
-            photoMap.remove(notSyncId)
+            //dao.removeById(notSyncId)
+            //photoMap.remove(notSyncId)
             dao.insert(PostEntity.fromDto(postFromServer))
             return postFromServer
         } catch (_: Exception) {
-            return dao.getPostById(notSyncId)?.toDto()
-                ?: throw java.lang.RuntimeException("DB error")
+            //return dao.getPostById(notSyncId)?.toDto() ?:
+            throw java.lang.RuntimeException("DB error")
         }
 
     }

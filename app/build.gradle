@@ -54,6 +54,7 @@ android {
 }
 
 dependencies {
+    def core_desugaring_version = "2.1.5"
 
     implementation libs.androidx.core.ktx
     implementation libs.androidx.appcompat
@@ -86,4 +87,6 @@ dependencies {
     implementation libs.hilt.android
     ksp "com.google.dagger:hilt-compiler:$hilt_version"
     implementation libs.kotlinx.coroutines.play.services
+    implementation libs.androidx.paging.runtime.ktx
+    coreLibraryDesugaring "com.android.tools:desugar_jdk_libs:$core_desugaring_version"
 }

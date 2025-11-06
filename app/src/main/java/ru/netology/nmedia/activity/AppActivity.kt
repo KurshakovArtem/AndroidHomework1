@@ -170,10 +170,6 @@ class AppActivity : AppCompatActivity() {
             Toast.makeText(this@AppActivity, R.string.google_play_unavailable, Toast.LENGTH_LONG)
                 .show()
         }
-
-        firebaseMessaging.token.addOnSuccessListener {
-            println(it)
-        }
     }
 
     private fun showLogoutDialog() {

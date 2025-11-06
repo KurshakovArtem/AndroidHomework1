@@ -33,10 +33,10 @@ class SinglePhotoFragment : Fragment() {
             findNavController().navigateUp()
         }
 
-        val post: Post = (viewModel.data.value?.posts?.find { it.id == postId }
-            ?: findNavController().navigateUp()) as Post
-
-        binding.singlePhoto.loadAttachmentImage("http://10.0.2.2:9999/media/${post.attachment?.url}")
+//        val post: Post = (viewModel.data.value?.posts?.find { it.id == postId }
+//            ?: findNavController().navigateUp()) as Post
+//
+//        binding.singlePhoto.loadAttachmentImage("http://10.0.2.2:9999/media/${post.attachment?.url}")
 
         return binding.root
     }
