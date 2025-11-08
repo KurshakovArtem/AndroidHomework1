@@ -15,7 +15,6 @@ import androidx.navigation.fragment.findNavController
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import ru.netology.nmedia.R
 import ru.netology.nmedia.adapter.OnInteractionListener
@@ -104,7 +103,7 @@ class SinglePostFragment : Fragment() {
                 findNavController().navigate(
                     R.id.action_singlePostFragment_to_singlePhotoFragment,
                     Bundle().apply {
-                        textArg = post.id.toString()
+                        textArg = post.attachment?.url
                     }
                 )
             }
@@ -116,6 +115,17 @@ class SinglePostFragment : Fragment() {
 
         val postId = arguments?.textArg?.toLong() ?: {
             findNavController().navigateUp()
+        }
+
+
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                val post = viewModel.getPostById(postId as Long)
+                if (post != null) {
+                    postViewHolder.bind(post)
+                } else { findNavController().navigateUp() }
+            }
         }
 
         viewModel.dataState.observe(viewLifecycleOwner) { state ->
@@ -180,21 +190,6 @@ class SinglePostFragment : Fragment() {
                 null -> {} //нет смысла уведомлять об успешной операции
             }
         }
-
-        viewLifecycleOwner.lifecycleScope.launch {
-            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.data.collectLatest(adapter::submitData)
-                val post =
-                    adapter.snapshot().items.find { it.id == postId } ?: return@repeatOnLifecycle
-                postViewHolder.bind(post)
-            }
-        }
-
-
-//        viewModel.data.observe(viewLifecycleOwner) { state ->
-//            val post = state.posts.find { it.id == postId } ?: return@observe
-//            postViewHolder.bind(post)
-//        }
 
         return binding.root
     }

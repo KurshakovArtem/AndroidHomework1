@@ -57,7 +57,7 @@ class PostViewModel @Inject constructor(
         }
 
 
-//    val newerCount: LiveData<Int> = data.switchMap {
+//        val newerCount: LiveData<Int> = data.switchMap {
 //        repository.getNewerCount()
 //            .catch { e -> e.printStackTrace() } // Не сообщаем пользователю об ошибке в фоне
 //            .asLiveData(Dispatchers.Default)
@@ -113,6 +113,10 @@ class PostViewModel @Inject constructor(
                 println("ошибка БД")
             }
         }
+    }
+
+    suspend fun getPostById(id: Long): Post? {
+        return repository.getPostById(id)
     }
 
     fun save(content: String) {

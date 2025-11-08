@@ -27,6 +27,7 @@ import ru.netology.nmedia.databinding.FragmentFeedBinding
 import ru.netology.nmedia.dto.Post
 import ru.netology.nmedia.fragment.NewPostFragment.Companion.textArg
 import ru.netology.nmedia.model.FeedErrorMassage
+import ru.netology.nmedia.viewmodel.AuthViewModel
 import ru.netology.nmedia.viewmodel.PostViewModel
 import javax.inject.Inject
 
@@ -34,6 +35,7 @@ import javax.inject.Inject
 class FeedFragment : Fragment() {
 
     private val viewModel: PostViewModel by activityViewModels()
+    private val authViewModel: AuthViewModel by activityViewModels()
 
     @Inject
     lateinit var appAuth: AppAuth
@@ -116,7 +118,7 @@ class FeedFragment : Fragment() {
                     findNavController().navigate(
                         R.id.action_feedFragment_to_singlePhotoFragment,
                         Bundle().apply {
-                            textArg = post.id.toString()
+                            textArg = post.attachment?.url
                         }
                     )
                 }
@@ -135,7 +137,17 @@ class FeedFragment : Fragment() {
             }
         }
 
-        binding.swiperefresh.setOnRefreshListener(adapter::refresh)
+        authViewModel.dataState.observe(viewLifecycleOwner){ dataState ->
+            if (dataState.needRefresh) {
+                adapter.refresh()
+                authViewModel.clearState()
+            }
+        }
+
+        binding.swiperefresh.setOnRefreshListener{
+            //viewModel.refresh()
+            adapter.refresh()
+        }
 
         viewModel.dataState.observe(viewLifecycleOwner) { state ->
             binding.progress.isVisible = state.loading
@@ -216,21 +228,6 @@ class FeedFragment : Fragment() {
             }
         }
 
-
-//        viewModel.data.observe(viewLifecycleOwner) { state ->
-//            adapter.submitList(state.posts)
-//            binding.emptyText.isVisible = state.empty
-//        }
-
-//        viewModel.newerCount.observe(viewLifecycleOwner) { count ->
-//            println(count)
-//            if (count == 0) {
-//                binding.newerBanner.visibility = View.GONE
-//            } else {
-//                binding.newerBanner.visibility = View.VISIBLE
-//                binding.newerCount.text = count.toString()
-//            }
-//        }
 
         binding.newerBanner.setOnClickListener {
             viewModel.updateNewerToOld()

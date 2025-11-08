@@ -11,11 +11,12 @@ interface PostRepository {
     fun getDraft(): String
     fun setDraft(content: String)
     suspend fun getAllAsync()
-    fun getNewerCount(): Flow<Int>
+    //fun getNewerCount(): Flow<Int>
     suspend fun updateNewerToOld()
     suspend fun removeBiIdAsync(id: Long)
     suspend fun saveAsync(post: Post, photo: File?): Post
     suspend fun retrySaveAsync(post: Post): Post
     suspend fun likeByIdAsync(id: Long)
+    suspend fun getPostById(id: Long): Post?
 
 }

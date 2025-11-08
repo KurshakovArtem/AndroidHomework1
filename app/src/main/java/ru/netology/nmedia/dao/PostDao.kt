@@ -54,12 +54,13 @@ interface PostDao {
     @Query(
         """
             SELECT * FROM PostEntity
-            WHERE id < :id
+            WHERE id < :id AND id >= 1
             ORDER BY
                 CASE
                     WHEN id <= 0 THEN 0
                      ELSE 1
-                END
+                END,
+                id DESC
             LIMIT :count
             """
     )

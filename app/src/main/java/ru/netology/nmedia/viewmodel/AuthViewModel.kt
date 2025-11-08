@@ -42,6 +42,7 @@ class AuthViewModel @Inject constructor(
                 appAuth.sendLoginPassword(username, password)
                 _dataAuthState.value = AuthModelState(success = true)
                 clearState()
+                _dataAuthState.value = AuthModelState(needRefresh = true)
             } catch (_: RuntimeException) {
                 _dataAuthState.value = AuthModelState(error = true)
             }
@@ -57,7 +58,7 @@ class AuthViewModel @Inject constructor(
                     _dataAuthState.value = AuthModelState(loading = true)
                     if (_photo.value == null) {
                         appAuth.sendRegistration(nickname, login, password)
-                        _dataAuthState.value = AuthModelState(success = true)
+                        _dataAuthState.value = AuthModelState(success = true, needRefresh = true)
                     } else {
                         appAuth.sendRegistrationWithPhoto(
                             nickname,
@@ -66,13 +67,18 @@ class AuthViewModel @Inject constructor(
                             _photo.value?.file ?: return@launch
                         )
                         removePhoto()
-                        _dataAuthState.value = AuthModelState(success = true)
+                        _dataAuthState.value = AuthModelState(success = true, needRefresh = true)
                     }
                 } catch (_: RuntimeException) {
                     _dataAuthState.value = AuthModelState(error = true)
                 }
             }
         }
+    }
+
+    fun removeAuth() {
+        appAuth.removeAuth()
+        _dataAuthState.value = AuthModelState(needRefresh = true)
     }
 
     fun clearState() {

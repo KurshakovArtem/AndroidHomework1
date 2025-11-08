@@ -131,7 +131,8 @@ class AppActivity : AppCompatActivity() {
                             if (currentFragment == R.id.newPostFragment) {
                                 showLogoutDialog()
                             } else {
-                                appAuth.removeAuth()
+                                viewModel.removeAuth()
+                                //appAuth.removeAuth()
                             }
                             true
                         }

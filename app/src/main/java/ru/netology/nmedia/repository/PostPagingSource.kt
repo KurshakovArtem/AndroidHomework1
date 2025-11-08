@@ -3,12 +3,12 @@ package ru.netology.nmedia.repository
 import androidx.paging.PagingSource
 import androidx.paging.PagingState
 import kotlinx.coroutines.CancellationException
-import ru.netology.nmedia.api.PostApiService
+import ru.netology.nmedia.dao.PostDao
 import ru.netology.nmedia.dto.Post
-import ru.netology.nmedia.error.ApiError
+import ru.netology.nmedia.entity.toDto
 
 class PostPagingSource(
-    private val apiService: PostApiService
+    private val dao: PostDao
 ) : PagingSource<Long, Post>() {
     override fun getRefreshKey(state: PagingState<Long, Post>): Long? {
         return null
@@ -16,11 +16,11 @@ class PostPagingSource(
 
     override suspend fun load(params: LoadParams<Long>): LoadResult<Long, Post> {
         try {
-            val response = when (params) {
-                is LoadParams.Append -> apiService.getBefore(
+            val result = when (params) {
+                is LoadParams.Append -> dao.getBefore(
                     id = params.key,
                     count = params.loadSize
-                )
+                ).toDto()
 
                 is LoadParams.Prepend -> return LoadResult.Page(
                     data = emptyList(),
@@ -28,21 +28,12 @@ class PostPagingSource(
                     nextKey = null
                 )
 
-                is LoadParams.Refresh -> apiService.getLatest(params.loadSize)
+                is LoadParams.Refresh -> dao.getLatest(params.loadSize).toDto()
             }
 
-            if (!response.isSuccessful) {
-                throw ApiError(response.code(), response.message())
-            }
+            val nextKey = if (result.isEmpty()) null else result.last().id
 
-            val body = response.body() ?: throw ApiError(
-                response.code(),
-                response.message()
-            )
-
-            val nextKey = if (body.isEmpty()) null else body.last().id
-
-            return LoadResult.Page(data = body, prevKey = params.key, nextKey = nextKey)
+            return LoadResult.Page(data = result, prevKey = params.key, nextKey = nextKey)
 
         } catch (e: Exception) {
             if (e is CancellationException) {

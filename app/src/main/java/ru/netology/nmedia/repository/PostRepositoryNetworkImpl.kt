@@ -3,19 +3,18 @@ package ru.netology.nmedia.repository
 
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
-import androidx.paging.map
+import androidx.paging.PagingData
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.asRequestBody
@@ -28,12 +27,9 @@ import ru.netology.nmedia.dto.Post
 import ru.netology.nmedia.entity.PostEntity
 import ru.netology.nmedia.entity.toDto
 import ru.netology.nmedia.entity.toEntity
-import ru.netology.nmedia.error.AppError
 import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
-import androidx.paging.PagingData
-import kotlinx.coroutines.flow.mapLatest
 
 @Singleton
 class PostRepositoryNetworkImpl @Inject constructor(
@@ -43,48 +39,48 @@ class PostRepositoryNetworkImpl @Inject constructor(
     private var draftContent = ""
     private var photoMap = mutableMapOf<Long, File>()
 
-//    override val data = dao.getAll()
-//        .map(List<PostEntity>::toDto)
-//        .flowOn(Dispatchers.Default)
+    init {
+        getNewerCount()
+    }
 
     override val data: Flow<PagingData<Post>> = Pager(
         config = PagingConfig(pageSize = 10, enablePlaceholders = false),
-        pagingSourceFactory = { PostPagingSource(apiService) }
+        pagingSourceFactory = { PostPagingSource(dao) }
     ).flow
 
 
     override suspend fun getAllAsync() {
         withContext(Dispatchers.IO + SupervisorJob()) {
             try {
-//                dao.setAllVisible()
-//                val flowPosts = data.firstOrNull().orEmpty()
-//                val syncServerTry = flowPosts.map { post ->
-//                    async {
-//                        try {
-//                            if (!post.syncServerState) {
-//                                retrySaveAsync(post)
-//                            }
-//                        } catch (_: RuntimeException) {
-//                            println("+1 необновлённый пост")
-//                        }
-//                    }
-//                }
-//                syncServerTry.awaitAll()
+                dao.setAllVisible()
+                val flowPosts = dao.getAll().firstOrNull().orEmpty().toDto()
+                val syncServerTry = flowPosts.map { post ->
+                    async {
+                        try {
+                            if (!post.syncServerState) {
+                                retrySaveAsync(post)
+                            }
+                        } catch (_: RuntimeException) {
+                            println("+1 необновлённый пост")
+                        }
+                    }
+                }
+                syncServerTry.awaitAll()
 
                 val posts = try {
                     apiService.getAll().map { post ->
                         // Не обновляем с сервера посты, которые отредактированны, но не синхронезированны с сервером
-//                        val postId = post.id
-//                        if (flowPosts.find { it.id == postId }?.syncServerState
-//                                ?: false
-//                        ) {
+                        val postId = post.id
+                        if (flowPosts.find { it.id == postId }?.syncServerState
+                                ?: false
+                        ) {
                             post.copy(syncServerState = true, isVisible = true)
-//                        } else {
-//                            flowPosts.find { it.id == postId } ?: post.copy(
-//                                syncServerState = true,
-//                                isVisible = true
-//                            )
-//                        }
+                        } else {
+                            flowPosts.find { it.id == postId } ?: post.copy(
+                                syncServerState = true,
+                                isVisible = true
+                            )
+                        }
                     }
                 } catch (_: Exception) {
                     println("Ошибка обновления постов")
@@ -97,43 +93,48 @@ class PostRepositoryNetworkImpl @Inject constructor(
         }
     }
 
-    override fun getNewerCount(): Flow<Int> = flow {
-        while (true) {
-            delay(180_000L)
-            val lastId = getLastId().first()
-            val newerPosts = apiService.getNewer(lastId).map {
-                it.copy(syncServerState = true, isVisible = false)
+    private fun getNewerCount() {
+        CoroutineScope(Dispatchers.Default).launch {
+            try {
+                while (true) {
+                    delay(30_000L)
+                    val lastId = getLastId().first()
+                    val newerPosts = apiService.getNewer(lastId).map {
+                        it.copy(syncServerState = true, isVisible = true)
+                    }
+                    if (newerPosts.isNotEmpty())
+                        dao.insert(newerPosts.toEntity())
+                }
+            } catch (_: Exception) {
+                println("Ошибка получения новых постов")
             }
-            dao.insert(newerPosts.toEntity())
-            emit(getInvisibleList().first())
         }
     }
-        .catch { e -> throw AppError.from(e) }
-        .flowOn(Dispatchers.Default)
+
 
     override suspend fun updateNewerToOld() {
         dao.setAllVisible()
     }
 
     override suspend fun saveAsync(post: Post, photo: File?): Post {
-//        val flowPosts = data.firstOrNull().orEmpty()
-//        val minimalId = if ((flowPosts.minOfOrNull { it.id } ?: 0) >= 0) -1
-//        else (flowPosts.minOfOrNull { it.id } ?: 0) - 1
-//        // Если новый пост, то id отрицательный
-//        // Если редактируем пост, то id оригинального поста
-//        val notSyncId = if (post.id != 0L) post.id else minimalId
-//        dao.insert(
-//            PostEntity.fromDto(
-//                post.copy(
-//                    id = notSyncId,
-//                    syncServerState = false,
-//                    isVisible = true
-//                )
-//            )
-//        )
-//        if (photo != null) {
-//            photoMap[notSyncId] = photo
-//        }
+        val flowPosts = dao.getAll().firstOrNull().orEmpty().toDto()
+        val minimalId = if ((flowPosts.minOfOrNull { it.id } ?: 0) >= 0) -1
+        else (flowPosts.minOfOrNull { it.id } ?: 0) - 1
+        // Если новый пост, то id отрицательный
+        // Если редактируем пост, то id оригинального поста
+        val notSyncId = if (post.id != 0L) post.id else minimalId
+        dao.insert(
+            PostEntity.fromDto(
+                post.copy(
+                    id = notSyncId,
+                    syncServerState = false,
+                    isVisible = true
+                )
+            )
+        )
+        if (photo != null) {
+            photoMap[notSyncId] = photo
+        }
 
         try {
             val media = photo?.let {
@@ -145,13 +146,13 @@ class PostRepositoryNetworkImpl @Inject constructor(
             val postFromServer =
                 apiService.save(postWithAttachment)
                     .copy(syncServerState = true, isVisible = true)
-            //dao.removeById(notSyncId)
-            //photoMap.remove(notSyncId)
+            dao.removeById(notSyncId)
+            photoMap.remove(notSyncId)
             dao.insert(PostEntity.fromDto(postFromServer))
             return postFromServer
         } catch (_: Exception) {
-            //return dao.getPostById(notSyncId)?.toDto() ?:
-            throw java.lang.RuntimeException("DB error")
+            return dao.getPostById(notSyncId)?.toDto()
+                ?: throw java.lang.RuntimeException("DB error")
         }
 
     }
@@ -222,6 +223,14 @@ class PostRepositoryNetworkImpl @Inject constructor(
             throw RuntimeException("Server error")
         }
 
+    }
+
+    override suspend fun getPostById(id: Long): Post? {
+        return try {
+            dao.getPostById(id)?.toDto()
+        } catch (_: Exception) {
+            null
+        }
     }
 
     private fun getLastId(): Flow<Long> =
