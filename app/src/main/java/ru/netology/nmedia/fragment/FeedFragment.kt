@@ -9,10 +9,16 @@ import androidx.core.net.toUri
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
+import androidx.paging.LoadState
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 import ru.netology.nmedia.R
 import ru.netology.nmedia.adapter.OnInteractionListener
 import ru.netology.nmedia.adapter.PostAdapter
@@ -21,6 +27,7 @@ import ru.netology.nmedia.databinding.FragmentFeedBinding
 import ru.netology.nmedia.dto.Post
 import ru.netology.nmedia.fragment.NewPostFragment.Companion.textArg
 import ru.netology.nmedia.model.FeedErrorMassage
+import ru.netology.nmedia.viewmodel.AuthViewModel
 import ru.netology.nmedia.viewmodel.PostViewModel
 import javax.inject.Inject
 
@@ -28,6 +35,7 @@ import javax.inject.Inject
 class FeedFragment : Fragment() {
 
     private val viewModel: PostViewModel by activityViewModels()
+    private val authViewModel: AuthViewModel by activityViewModels()
 
     @Inject
     lateinit var appAuth: AppAuth
@@ -49,7 +57,7 @@ class FeedFragment : Fragment() {
             object : OnInteractionListener {
                 override fun onLike(post: Post) {
                     if (appAuth.authStateFlow.value.id != 0L) {
-                        viewModel.likeById(post.id)
+                        viewModel.likeById(post)
                     } else {
                         showLoginDialog()
                     }
@@ -110,7 +118,7 @@ class FeedFragment : Fragment() {
                     findNavController().navigate(
                         R.id.action_feedFragment_to_singlePhotoFragment,
                         Bundle().apply {
-                            textArg = post.id.toString()
+                            textArg = post.attachment?.url
                         }
                     )
                 }
@@ -119,15 +127,31 @@ class FeedFragment : Fragment() {
 
         binding.list.adapter = adapter
 
-        binding.swiperefresh.setOnRefreshListener {
-            viewModel.refresh()
-            binding.newerBanner.visibility = View.GONE
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            adapter.loadStateFlow.collectLatest { state ->
+                binding.swiperefresh.isRefreshing =
+                    state.refresh is LoadState.Loading ||
+                            state.prepend is LoadState.Loading ||
+                            state.append is LoadState.Loading
+            }
+        }
+
+        authViewModel.dataState.observe(viewLifecycleOwner){ dataState ->
+            if (dataState.needRefresh) {
+                adapter.refresh()
+                authViewModel.clearState()
+            }
+        }
+
+        binding.swiperefresh.setOnRefreshListener{
+            //viewModel.refresh()
+            adapter.refresh()
         }
 
         viewModel.dataState.observe(viewLifecycleOwner) { state ->
             binding.progress.isVisible = state.loading
             binding.swiperefresh.isRefreshing = state.refreshing
-            //errorMergeBinding.errorGroup.isVisible = state.error
             if (state.error) {
                 Snackbar.make(binding.root, R.string.error_loading, Snackbar.LENGTH_LONG)
                     .setAction(R.string.retry_loading) {
@@ -141,7 +165,9 @@ class FeedFragment : Fragment() {
                     Snackbar.make(binding.root, R.string.like_error, Snackbar.LENGTH_LONG)
                         .setAction(R.string.retry_loading) {
                             val postId = state.errorReport.postIdError
-                            viewModel.likeById(postId)
+                            val post = adapter.snapshot().items.find { it.id == postId }
+                                ?: return@setAction
+                            viewModel.likeById(post)
                         }
                         .show()
                 }
@@ -150,7 +176,9 @@ class FeedFragment : Fragment() {
                     Snackbar.make(binding.root, R.string.dislike_error, Snackbar.LENGTH_LONG)
                         .setAction(R.string.retry_loading) {
                             val postId = state.errorReport.postIdError
-                            viewModel.likeById(postId)
+                            val post = adapter.snapshot().items.find { it.id == postId }
+                                ?: return@setAction
+                            viewModel.likeById(post)
                         }
                         .show()
                 }
@@ -168,7 +196,7 @@ class FeedFragment : Fragment() {
                     Snackbar.make(binding.root, R.string.save_error, Snackbar.LENGTH_LONG)
                         .setAction(R.string.retry_loading) {
                             val post =
-                                viewModel.data.value?.posts?.find {
+                                adapter.snapshot().items.find {
                                     it.id == state.errorReport.postIdError
                                 }
                                     ?: throw RuntimeException("Post error")
@@ -181,7 +209,7 @@ class FeedFragment : Fragment() {
                     Snackbar.make(binding.root, R.string.save_error, Snackbar.LENGTH_LONG)
                         .setAction(R.string.retry_loading) {
                             val post =
-                                viewModel.data.value?.posts?.find {
+                                adapter.snapshot().items.find {
                                     it.id == state.errorReport.postIdError
                                 }
                                     ?: throw RuntimeException("Post error")
@@ -194,23 +222,12 @@ class FeedFragment : Fragment() {
             }
         }
 
-
-
-
-        viewModel.data.observe(viewLifecycleOwner) { state ->
-            adapter.submitList(state.posts)
-            binding.emptyText.isVisible = state.empty
-        }
-
-        viewModel.newerCount.observe(viewLifecycleOwner) { count ->
-            println(count)
-            if (count == 0) {
-                binding.newerBanner.visibility = View.GONE
-            } else {
-                binding.newerBanner.visibility = View.VISIBLE
-                binding.newerCount.text = count.toString()
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.data.collectLatest(adapter::submitData)
             }
         }
+
 
         binding.newerBanner.setOnClickListener {
             viewModel.updateNewerToOld()

@@ -8,12 +8,17 @@ import android.view.ViewGroup
 import androidx.core.net.toUri
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
 import ru.netology.nmedia.R
 import ru.netology.nmedia.adapter.OnInteractionListener
+import ru.netology.nmedia.adapter.PostAdapter
 import ru.netology.nmedia.adapter.PostViewHolder
 import ru.netology.nmedia.auth.AppAuth
 import ru.netology.nmedia.databinding.FragmentSinglePostBinding
@@ -45,7 +50,7 @@ class SinglePostFragment : Fragment() {
         val interactionListener = object : OnInteractionListener {
             override fun onLike(post: Post) {
                 if (appAuth.authStateFlow.value.id != 0L) {
-                    viewModel.likeById(post.id)
+                    viewModel.likeById(post)
                 } else {
                     showLoginDialog()
                 }
@@ -98,15 +103,29 @@ class SinglePostFragment : Fragment() {
                 findNavController().navigate(
                     R.id.action_singlePostFragment_to_singlePhotoFragment,
                     Bundle().apply {
-                        textArg = post.id.toString()
+                        textArg = post.attachment?.url
                     }
                 )
             }
         }
+
+        val adapter = PostAdapter(interactionListener)
+
         val postViewHolder = PostViewHolder(binding.singlePost, interactionListener)
 
         val postId = arguments?.textArg?.toLong() ?: {
             findNavController().navigateUp()
+        }
+
+
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                val post = viewModel.getPostById(postId as Long)
+                if (post != null) {
+                    postViewHolder.bind(post)
+                } else { findNavController().navigateUp() }
+            }
         }
 
         viewModel.dataState.observe(viewLifecycleOwner) { state ->
@@ -115,7 +134,9 @@ class SinglePostFragment : Fragment() {
                     Snackbar.make(binding.root, R.string.like_error, Snackbar.LENGTH_LONG)
                         .setAction(R.string.retry_loading) {
                             val postId = state.errorReport.postIdError
-                            viewModel.likeById(postId)
+                            val post = adapter.snapshot().items.find { it.id == postId }
+                                ?: return@setAction
+                            viewModel.likeById(post)
                         }
                         .show()
                 }
@@ -124,7 +145,9 @@ class SinglePostFragment : Fragment() {
                     Snackbar.make(binding.root, R.string.dislike_error, Snackbar.LENGTH_LONG)
                         .setAction(R.string.retry_loading) {
                             val postId = state.errorReport.postIdError
-                            viewModel.likeById(postId)
+                            val post = adapter.snapshot().items.find { it.id == postId }
+                                ?: return@setAction
+                            viewModel.likeById(post)
                         }
                         .show()
                 }
@@ -142,7 +165,7 @@ class SinglePostFragment : Fragment() {
                     Snackbar.make(binding.root, R.string.save_error, Snackbar.LENGTH_LONG)
                         .setAction(R.string.retry_loading) {
                             val post =
-                                viewModel.data.value?.posts?.find {
+                                adapter.snapshot().items.find {
                                     it.id == state.errorReport.postIdError
                                 }
                                     ?: throw RuntimeException("Post error")
@@ -155,7 +178,7 @@ class SinglePostFragment : Fragment() {
                     Snackbar.make(binding.root, R.string.save_error, Snackbar.LENGTH_LONG)
                         .setAction(R.string.retry_loading) {
                             val post =
-                                viewModel.data.value?.posts?.find {
+                                adapter.snapshot().items.find {
                                     it.id == state.errorReport.postIdError
                                 }
                                     ?: throw RuntimeException("Post error")
@@ -168,10 +191,6 @@ class SinglePostFragment : Fragment() {
             }
         }
 
-        viewModel.data.observe(viewLifecycleOwner) { state ->
-            val post = state.posts.find { it.id == postId } ?: return@observe
-            postViewHolder.bind(post)
-        }
         return binding.root
     }
 
