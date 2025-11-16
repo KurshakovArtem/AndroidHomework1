@@ -1,5 +1,6 @@
 package ru.netology.nmedia.dao
 
+import androidx.paging.PagingSource
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
@@ -9,6 +10,9 @@ import ru.netology.nmedia.entity.PostEntity
 
 @Dao
 interface PostDao {
+
+    @Query("SELECT * FROM PostEntity ORDER BY id DESC")
+    fun pagingSource(): PagingSource<Int, PostEntity>
 
     @Query(
         """
@@ -126,5 +130,8 @@ interface PostDao {
     """
     )
     suspend fun sharedById(id: Long)
+
+    @Query("DELETE FROM PostEntity")
+    suspend fun removeAll()
 
 }

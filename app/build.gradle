@@ -89,4 +89,5 @@ dependencies {
     implementation libs.kotlinx.coroutines.play.services
     implementation libs.androidx.paging.runtime.ktx
     coreLibraryDesugaring "com.android.tools:desugar_jdk_libs:$core_desugaring_version"
+    implementation libs.androidx.room.paging
 }
