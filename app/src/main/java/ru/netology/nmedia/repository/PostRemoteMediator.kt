@@ -33,7 +33,10 @@ class PostRemoteMediator(
                     if (id == null) {
                         service.getLatest(state.config.initialLoadSize)
                     } else {
-                        service.getNewer(id)
+                        val id = postRemoteKeyDao.max() ?: return MediatorResult.Success(
+                            endOfPaginationReached = false
+                        )
+                        service.getAfter(id, state.config.pageSize)
                     }
                 }
 
@@ -62,14 +65,29 @@ class PostRemoteMediator(
             db.withTransaction {
                 when (loadType) {
                     LoadType.REFRESH -> {
-                        postRemoteKeyDao.insert(
-                            listOf(
-                                PostRemoteKeyEntity(
-                                    type = PostRemoteKeyEntity.KeyType.AFTER,
-                                    id = body.last().id
-                                ),
+                        if (postRemoteKeyDao.isEmpty() || postDao.isEmpty()) { // проверяю БД с постами и с ключами на пустоту (для надёжности сразу обе)
+                            postRemoteKeyDao.insert(
+                                listOf(
+                                    PostRemoteKeyEntity(
+                                        type = PostRemoteKeyEntity.KeyType.AFTER,
+                                        id = body.first().id
+                                    ),
+                                    PostRemoteKeyEntity(
+                                        type = PostRemoteKeyEntity.KeyType.BEFORE,
+                                        id = body.last().id
+                                    )
+                                )
                             )
-                        )
+                        } else {
+                            postRemoteKeyDao.insert(
+                                listOf(
+                                    PostRemoteKeyEntity(
+                                        type = PostRemoteKeyEntity.KeyType.AFTER,
+                                        id = body.first().id
+                                    ),
+                                )
+                            )
+                        }
                     }
 
                     LoadType.PREPEND -> {}
