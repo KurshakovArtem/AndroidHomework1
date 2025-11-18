@@ -4,7 +4,6 @@ import okhttp3.Interceptor
 import okhttp3.MultipartBody
 import okhttp3.OkHttpClient
 import okhttp3.RequestBody
-import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.Body
@@ -46,19 +45,19 @@ interface PostApiService {
     suspend fun getAll(): List<Post>
 
     @GET("posts/latest")
-    suspend fun getLatest(@Query("count") count: Int): Response<List<Post>>
+    suspend fun getLatest(@Query("count") count: Int): List<Post>
 
     @GET("posts/{id}/before")
     suspend fun getBefore(
         @Path("id") id: Long,
         @Query("count") count: Int
-    ): Response<List<Post>>
+    ): List<Post>
 
     @GET("posts/{id}/after")
     suspend fun getAfter(
         @Path("id") id: Long,
         @Query("count") count: Int
-    ): Response<List<Post>>
+    ): List<Post>
 
     @GET("posts/{id}/newer")
     suspend fun getNewer(@Path("id") id: Long): List<Post>
