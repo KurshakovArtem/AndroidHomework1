@@ -64,5 +64,6 @@
     <string name="error_registration">Registration error</string>
     <string name="remove_avatar">Remove avatar</string>
     <string name="push_message">You\'ve got message</string>
+    <string name="ad_description">ad</string>
 
 </resources>

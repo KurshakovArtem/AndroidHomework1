@@ -20,8 +20,8 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import ru.netology.nmedia.R
+import ru.netology.nmedia.adapter.FeedAdapter
 import ru.netology.nmedia.adapter.OnInteractionListener
-import ru.netology.nmedia.adapter.PostAdapter
 import ru.netology.nmedia.auth.AppAuth
 import ru.netology.nmedia.databinding.FragmentFeedBinding
 import ru.netology.nmedia.dto.Post
@@ -53,7 +53,7 @@ class FeedFragment : Fragment() {
         )
 
 
-        val adapter = PostAdapter(
+        val adapter = FeedAdapter(
             object : OnInteractionListener {
                 override fun onLike(post: Post) {
                     if (appAuth.authStateFlow.value.id != 0L) {
@@ -137,14 +137,14 @@ class FeedFragment : Fragment() {
             }
         }
 
-        authViewModel.dataState.observe(viewLifecycleOwner){ dataState ->
+        authViewModel.dataState.observe(viewLifecycleOwner) { dataState ->
             if (dataState.needRefresh) {
                 adapter.refresh()
                 authViewModel.clearState()
             }
         }
 
-        binding.swiperefresh.setOnRefreshListener{
+        binding.swiperefresh.setOnRefreshListener {
             //viewModel.refresh()
             adapter.refresh()
         }
@@ -168,7 +168,11 @@ class FeedFragment : Fragment() {
                             val postId = state.errorReport.postIdError
                             val post = adapter.snapshot().items.find { it.id == postId }
                                 ?: return@setAction
-                            viewModel.likeById(post)
+                            if (post is Post) {
+                                viewModel.likeById(post)
+                            } else {
+                                return@setAction
+                            }
                         }
                         .show()
                 }
@@ -179,7 +183,11 @@ class FeedFragment : Fragment() {
                             val postId = state.errorReport.postIdError
                             val post = adapter.snapshot().items.find { it.id == postId }
                                 ?: return@setAction
-                            viewModel.likeById(post)
+                            if (post is Post) {
+                                viewModel.likeById(post)
+                            } else {
+                                return@setAction
+                            }
                         }
                         .show()
                 }
@@ -201,7 +209,11 @@ class FeedFragment : Fragment() {
                                     it.id == state.errorReport.postIdError
                                 }
                                     ?: throw RuntimeException("Post error")
-                            viewModel.saveRefresh(post)
+                            if (post is Post) {
+                                viewModel.saveRefresh(post)
+                            } else {
+                                return@setAction
+                            }
                         }
                         .show()
                 }
@@ -214,7 +226,11 @@ class FeedFragment : Fragment() {
                                     it.id == state.errorReport.postIdError
                                 }
                                     ?: throw RuntimeException("Post error")
-                            viewModel.saveRefresh(post)
+                            if (post is Post) {
+                                viewModel.saveRefresh(post)
+                            } else {
+                                return@setAction
+                            }
                         }
                         .show()
                 }
