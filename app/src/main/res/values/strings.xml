@@ -65,5 +65,6 @@
     <string name="remove_avatar">Remove avatar</string>
     <string name="push_message">You\'ve got message</string>
     <string name="ad_description">ad</string>
+    <string name="today_text">Today</string>
 
 </resources>

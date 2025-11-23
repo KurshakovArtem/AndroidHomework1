@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import ru.netology.nmedia.auth.AppAuth
 import ru.netology.nmedia.dto.Ad
+import ru.netology.nmedia.dto.Date
 import ru.netology.nmedia.dto.FeedItem
 import ru.netology.nmedia.dto.Post
 import ru.netology.nmedia.model.ErrorReport
@@ -24,6 +25,7 @@ import ru.netology.nmedia.model.FeedErrorMassage
 import ru.netology.nmedia.model.FeedModelState
 import ru.netology.nmedia.model.PhotoModel
 import ru.netology.nmedia.repository.PostRepository
+import ru.netology.nmedia.supportingFunctions.DateSeparator
 import ru.netology.nmedia.supportingFunctions.SingleLiveEvent
 import java.io.File
 import javax.inject.Inject
@@ -34,7 +36,7 @@ private val empty = Post(
     id = 0,
     authorId = 0,
     author = "",
-    published = "",
+    published = 0L,
     content = "",
     likes = 0,
     likedByMe = false
@@ -47,21 +49,42 @@ class PostViewModel @Inject constructor(
     appAuth: AppAuth,
 ) : ViewModel() {
 
+
     private val cached: Flow<PagingData<FeedItem>> = repository
         .data
-        .map { pagingData ->
-            pagingData.insertSeparators(
-                generator = { before, _ ->
-                    if (before?.id?.rem(5) != 0L) null else
-                        Ad(
-                            Random.nextLong(),
-                            "https://netology.ru",
-                            "figma.jpg"
-                        )
-                }
-            )
-        }
         .cachedIn(viewModelScope)
+        .map { pagingData: PagingData<Post> ->
+            pagingData.insertSeparators { before: Post?, after: Post? ->
+
+                if (after != null) {
+                    val afterPeriod = DateSeparator.getPeriod(after.published)
+                    when {
+                        before == null -> {
+                            return@insertSeparators Date(
+                                id = Random.nextLong(),
+                                title = afterPeriod
+                            )
+                        }
+
+                        before.published.let { DateSeparator.getPeriod(it) } != afterPeriod -> {
+                            return@insertSeparators Date(
+                                id = Random.nextLong(),
+                                title = afterPeriod
+                            )
+                        }
+                    }
+                }
+
+                if (before != null && after != null && before.id % 5 == 0L) {
+                    return@insertSeparators Ad(
+                        Random.nextLong(),
+                        "https://netology.ru",
+                        "figma.jpg"
+                    )
+                }
+                null
+            }
+        }
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val data: Flow<PagingData<FeedItem>> = appAuth
@@ -76,11 +99,6 @@ class PostViewModel @Inject constructor(
         }
 
 
-    //        val newerCount: LiveData<Int> = data.switchMap {
-//        repository.getNewerCount()
-//            .catch { e -> e.printStackTrace() } // Не сообщаем пользователю об ошибке в фоне
-//            .asLiveData(Dispatchers.Default)
-//    }
     private val _dataState = MutableLiveData<FeedModelState>()
     val dataState: LiveData<FeedModelState>
         get() = _dataState

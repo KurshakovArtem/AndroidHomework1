@@ -14,6 +14,8 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import androidx.paging.LoadState
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
@@ -22,6 +24,8 @@ import kotlinx.coroutines.launch
 import ru.netology.nmedia.R
 import ru.netology.nmedia.adapter.FeedAdapter
 import ru.netology.nmedia.adapter.OnInteractionListener
+import ru.netology.nmedia.adapter.PagingLoadStateAdapter
+import ru.netology.nmedia.adapter.StateOnInteractionListener
 import ru.netology.nmedia.auth.AppAuth
 import ru.netology.nmedia.databinding.FragmentFeedBinding
 import ru.netology.nmedia.dto.Post
@@ -125,15 +129,40 @@ class FeedFragment : Fragment() {
             }
         )
 
-        binding.list.adapter = adapter
+        binding.list.adapter = adapter.withLoadStateHeaderAndFooter(
+            header = PagingLoadStateAdapter(
+                object : StateOnInteractionListener {
+                    override fun onRetry() {
+                        adapter.retry()
+                    }
+                }),
+            footer = PagingLoadStateAdapter(
+                object : StateOnInteractionListener {
+                    override fun onRetry() {
+                        adapter.retry()
+                    }
+                })
+        )
+
+        val layoutManager = binding.list.layoutManager as LinearLayoutManager
+
+        binding.list.addOnScrollListener( object : RecyclerView.OnScrollListener(){
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int){
+                val firstVisiblePosition = layoutManager.findFirstVisibleItemPosition()
+                val firstCompletelyVisible = layoutManager.findFirstCompletelyVisibleItemPosition()
+
+                val shouldShowHeader = firstCompletelyVisible == 0 || firstVisiblePosition == 0
+                binding.todayText.isVisible = shouldShowHeader
+            }
+        })
 
 
         viewLifecycleOwner.lifecycleScope.launch {
             adapter.loadStateFlow.collectLatest { state ->
                 binding.swiperefresh.isRefreshing =
-                    state.refresh is LoadState.Loading ||
-                            state.prepend is LoadState.Loading ||
-                            state.append is LoadState.Loading
+                    state.refresh is LoadState.Loading
+//                            state.prepend is LoadState.Loading ||
+//                            state.append is LoadState.Loading
             }
         }
 
