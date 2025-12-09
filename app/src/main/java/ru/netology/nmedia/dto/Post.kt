@@ -1,12 +1,12 @@
 package ru.netology.nmedia.dto
 
 data class Post(
-    val id: Long,
+    override val id: Long,
     val authorId: Long,
     val author: String,
     val authorAvatar: String = "",
     val content: String,
-    val published: String,
+    val published: Long,
     val likedByMe: Boolean = false,
     val likes: Int = 0,
     val share: Int = 0,
@@ -15,4 +15,4 @@ data class Post(
     val attachment: Attachment? = null,
     val isVisible: Boolean = true,
     val ownedByMe: Boolean = false
-)
+): FeedItem()

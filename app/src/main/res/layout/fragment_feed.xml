@@ -11,6 +11,7 @@
         android:layout_height="match_parent"
         tools:context=".fragment.FeedFragment">
 
+
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/newer_banner"
             android:layout_width="match_parent"
@@ -26,8 +27,7 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             app:strokeColor="#283895"
-            app:strokeWidth="2dp"
-            tools:visibility="visible">
+            app:strokeWidth="2dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -38,18 +38,18 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center_horizontal"
+                    android:layout_marginTop="25dp"
                     android:text="@string/unread_posts"
                     android:textColor="#9D4C33"
-                    android:textSize="20sp"
-                    android:layout_marginTop="25dp"/>
+                    android:textSize="20sp" />
 
                 <TextView
                     android:id="@+id/newer_count"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:layout_gravity="center_horizontal"
                     android:textColor="#9D4C33"
-                    android:textSize="20sp"
-                    android:layout_gravity="center_horizontal"/>
+                    android:textSize="20sp" />
             </LinearLayout>
 
         </com.google.android.material.card.MaterialCardView>
@@ -61,13 +61,32 @@
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintTop_toBottomOf="@id/newer_banner">
 
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/list"
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-                tools:listitem="@layout/card_post" />
+                android:orientation="vertical">
 
+                <TextView
+                    android:id="@+id/today_text"
+                    android:layout_width="match_parent"
+                    android:layout_height="36dp"
+                    android:background="@color/sign_in_menu"
+                    android:gravity="center"
+                    android:text="@string/today_text"
+                    android:textColor="@android:color/black"
+                    android:textSize="18sp"
+                    android:visibility="gone"
+                    tools:visibility="visible"/>
+
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/list"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+                    tools:listitem="@layout/card_post" />
+
+            </LinearLayout>
         </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
 

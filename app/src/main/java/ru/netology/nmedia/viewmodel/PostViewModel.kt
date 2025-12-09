@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.PagingData
 import androidx.paging.cachedIn
+import androidx.paging.insertSeparators
 import androidx.paging.map
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -15,22 +16,27 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import ru.netology.nmedia.auth.AppAuth
+import ru.netology.nmedia.dto.Ad
+import ru.netology.nmedia.dto.Date
+import ru.netology.nmedia.dto.FeedItem
 import ru.netology.nmedia.dto.Post
 import ru.netology.nmedia.model.ErrorReport
 import ru.netology.nmedia.model.FeedErrorMassage
 import ru.netology.nmedia.model.FeedModelState
 import ru.netology.nmedia.model.PhotoModel
 import ru.netology.nmedia.repository.PostRepository
+import ru.netology.nmedia.supportingFunctions.DateSeparator
 import ru.netology.nmedia.supportingFunctions.SingleLiveEvent
 import java.io.File
 import javax.inject.Inject
+import kotlin.random.Random
 
 
 private val empty = Post(
     id = 0,
     authorId = 0,
     author = "",
-    published = "",
+    published = 0L,
     content = "",
     likes = 0,
     likedByMe = false
@@ -43,25 +49,56 @@ class PostViewModel @Inject constructor(
     appAuth: AppAuth,
 ) : ViewModel() {
 
-    private val cached = repository.data.cachedIn(viewModelScope)
+
+    private val cached: Flow<PagingData<FeedItem>> = repository
+        .data
+        .cachedIn(viewModelScope)
+        .map { pagingData: PagingData<Post> ->
+            pagingData.insertSeparators { before: Post?, after: Post? ->
+
+                if (after != null) {
+                    val afterPeriod = DateSeparator.getPeriod(after.published)
+                    when {
+                        before == null -> {
+                            return@insertSeparators Date(
+                                id = Random.nextLong(),
+                                title = afterPeriod
+                            )
+                        }
+
+                        before.published.let { DateSeparator.getPeriod(it) } != afterPeriod -> {
+                            return@insertSeparators Date(
+                                id = Random.nextLong(),
+                                title = afterPeriod
+                            )
+                        }
+                    }
+                }
+
+                if (before != null && after != null && before.id % 5 == 0L) {
+                    return@insertSeparators Ad(
+                        Random.nextLong(),
+                        "https://netology.ru",
+                        "figma.jpg"
+                    )
+                }
+                null
+            }
+        }
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    val data: Flow<PagingData<Post>> = appAuth
+    val data: Flow<PagingData<FeedItem>> = appAuth
         .authStateFlow
         .flatMapLatest { (myId, _) ->
             cached.map { pagingData ->
-                pagingData.map { post ->
-                    post.copy(ownedByMe = post.authorId == myId)
+                pagingData.map { item ->
+                    if (item !is Post) item else
+                        item.copy(ownedByMe = item.authorId == myId)
                 }
             }
         }
 
 
-//        val newerCount: LiveData<Int> = data.switchMap {
-//        repository.getNewerCount()
-//            .catch { e -> e.printStackTrace() } // Не сообщаем пользователю об ошибке в фоне
-//            .asLiveData(Dispatchers.Default)
-//    }
     private val _dataState = MutableLiveData<FeedModelState>()
     val dataState: LiveData<FeedModelState>
         get() = _dataState

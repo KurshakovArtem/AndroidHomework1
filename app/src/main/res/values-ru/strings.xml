@@ -65,4 +65,6 @@
     <string name="error_registration">Ошибка регистрации</string>
     <string name="remove_avatar">Удалить аватарку</string>
     <string name="push_message">У вас есть сообщение</string>
+    <string name="ad_description">Реклама</string>
+    <string name="today_text">Сегодня</string>
 </resources>

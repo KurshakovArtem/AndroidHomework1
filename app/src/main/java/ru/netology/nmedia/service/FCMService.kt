@@ -100,7 +100,7 @@ class FCMService : FirebaseMessagingService() {
                 getString(
                     R.string.notification_new_post,
                     post.author,
-                    post.published
+                    post.published.toString()
                 )
             )
             .setStyle(NotificationCompat.BigTextStyle().bigText(post.content))

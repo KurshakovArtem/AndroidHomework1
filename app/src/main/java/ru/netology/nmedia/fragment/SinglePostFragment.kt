@@ -18,7 +18,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import ru.netology.nmedia.R
 import ru.netology.nmedia.adapter.OnInteractionListener
-import ru.netology.nmedia.adapter.PostAdapter
+import ru.netology.nmedia.adapter.FeedAdapter
 import ru.netology.nmedia.adapter.PostViewHolder
 import ru.netology.nmedia.auth.AppAuth
 import ru.netology.nmedia.databinding.FragmentSinglePostBinding
@@ -40,7 +40,7 @@ class SinglePostFragment : Fragment() {
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
+    ): View {
         val binding = FragmentSinglePostBinding.inflate(
             inflater,
             container,
@@ -109,7 +109,7 @@ class SinglePostFragment : Fragment() {
             }
         }
 
-        val adapter = PostAdapter(interactionListener)
+        val adapter = FeedAdapter(interactionListener)
 
         val postViewHolder = PostViewHolder(binding.singlePost, interactionListener)
 
@@ -124,7 +124,9 @@ class SinglePostFragment : Fragment() {
                 val post = viewModel.getPostById(postId as Long)
                 if (post != null) {
                     postViewHolder.bind(post)
-                } else { findNavController().navigateUp() }
+                } else {
+                    findNavController().navigateUp()
+                }
             }
         }
 
@@ -136,7 +138,11 @@ class SinglePostFragment : Fragment() {
                             val postId = state.errorReport.postIdError
                             val post = adapter.snapshot().items.find { it.id == postId }
                                 ?: return@setAction
-                            viewModel.likeById(post)
+                            if (post is Post) {
+                                viewModel.likeById(post)
+                            } else {
+                                return@setAction
+                            }
                         }
                         .show()
                 }
@@ -147,7 +153,11 @@ class SinglePostFragment : Fragment() {
                             val postId = state.errorReport.postIdError
                             val post = adapter.snapshot().items.find { it.id == postId }
                                 ?: return@setAction
-                            viewModel.likeById(post)
+                            if (post is Post) {
+                                viewModel.likeById(post)
+                            } else {
+                                return@setAction
+                            }
                         }
                         .show()
                 }
@@ -169,7 +179,11 @@ class SinglePostFragment : Fragment() {
                                     it.id == state.errorReport.postIdError
                                 }
                                     ?: throw RuntimeException("Post error")
-                            viewModel.saveRefresh(post)
+                            if (post is Post) {
+                                viewModel.saveRefresh(post)
+                            } else {
+                                return@setAction
+                            }
                         }
                         .show()
                 }
@@ -182,7 +196,11 @@ class SinglePostFragment : Fragment() {
                                     it.id == state.errorReport.postIdError
                                 }
                                     ?: throw RuntimeException("Post error")
-                            viewModel.saveRefresh(post)
+                            if (post is Post) {
+                                viewModel.saveRefresh(post)
+                            } else {
+                                return@setAction
+                            }
                         }
                         .show()
                 }
